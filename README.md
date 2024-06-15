@@ -1,7 +1,6 @@
-# chicknen_swarm_python
+# chicken_swarm_python
 
 Basic chicken swarm optimizer written in Python.  Modified from the [adaptive timestep PSO optimizer](https://github.com/jonathan46000/pso_python) by [jonathan46000](https://github.com/jonathan46000) to keep a consistent format across optimizers in AntennaCAT.
-
 
 
 Now featuring AntennaCAT hooks for GUI integration and user input handling.
@@ -82,10 +81,9 @@ The optimizer minimizes the absolute value of the difference from the target out
 #### Internal Objective Function Example
 The current internal optimization function takes 3 inputs, and has 2 outputs. It was created as a simple 3-variable optimization objective function that would be quick to converge.  
 <p align="center">
-        <img src="https://github.com/LC-Linkous/cat_swarm_python/blob/main/media/obj_func_pareto.png" alt="Function Feasable Decision Space and Objective Space with Pareto Front" height="200">
+        <img src="https://github.com/LC-Linkous/cat_swarm_python/blob/main/media/obj_func_pareto.png" alt="Function Feasible Decision Space and Objective Space with Pareto Front" height="200">
 </p>
-   <p align="center">Function Feasable Decision Space and Objective Space with Pareto Front</p>
-
+   <p align="center">Function Feasible Decision Space and Objective Space with Pareto Front</p>
 
 ```math
 \text{minimize}: 
@@ -99,14 +97,12 @@ f_{2}(\mathbf{x}) = (x_3-0.2)^4
 |----------|----------|----------|
 | 3      | $0.21\leq x_1\leq 1$ <br> $0\leq x_2\leq 1$ <br> $0.1 \leq x_3\leq 0.5$  | $x_3\gt \frac{x_1}{2}$ or $x_3\lt 0.1$| 
 
-
 This function has three files:
    1) configs_F.py - contains imports for the objective function and constraints, CONSTANT assignments for functions and labeling, boundary ranges, the number of input variables, the number of output values, and the target values for the output
    2) constr_F.py - contains a function with the problem constraints, both for the function and for error handling in the case of under/overflow. 
    3) func_F.py - contains a function with the objective function.
 
-Other multi-objective functions can be applied to this project by following the same format (and several have been collected into a compatable library, and will be realeased in a seperate repo)
-
+Other multi-objective functions can be applied to this project by following the same format (and several have been collected into a compatible library, and will be released in a separate repo)
 
 
 ## Example Implementations
@@ -127,7 +123,6 @@ main_test_graph.py provides an example using a parent class, and the self.suppre
 
 NOTE: if you close the graph as the code is running, the code will continue to run, but the graph will not re-open.
 
-
 ## References
 
 [1] X. B. Meng, Y. Liu, X. Gao, and H. Zhang, "A new bio-inspired algorithm: Chicken swarm optimization," in Proc. Int. Conf. Swarm Intell. Cham, Switzerland, Springer, 2014, pp. 86–94.
@@ -140,3 +135,5 @@ Publications featuring the code in this repo will be added as they become public
 ## Licensing
 
 The code in this repository has been released under GPL-2.0
+
+
