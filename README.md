@@ -1,4 +1,4 @@
-# chicken_swarm_python
+# chicken_swarm_quantum
 
 # IN PROGRESS!!!!
 
@@ -7,6 +7,10 @@ A 'quantum' particle swarm optimizer written in Python using quantum inspired me
 
 Now featuring AntennaCAT hooks for GUI integration and user input handling.
  
+
+This branch of the repository is part of a series of replication studies. It is not intended to be the 'best' implementation, or the most recent update. This method has been chosen to replicate a specific snapshot of literature.
+
+
 ## Table of Contents
 * [Chicken Swarm Optimization](#chicken-swarm-optimization)
 * [Quantum Inspired Optimization](#quantum-inspired-optimization)
@@ -67,50 +71,54 @@ Quantum Particle Swarm Optimization (QPSO) was introduced in 2004 [2] [3]. Parap
 **Example in QPSO**: In QPSO, the positions of particles might be updated using a combination of their personal best position and the global best position, creating a form of "entanglement" where particles are influenced by the best solutions found by the swarm, thus maintaining a level of coordination and cooperation.
 
 
-## Quantum Particle Swarm Optimization
+## Quantum Chicken Swarm Optimization
 
 Unlike traditional PSO, Quantum Particle Swarm Optimization (QPSO) doesn't use a velocity vector. Instead, it updates particle positions directly based on a probability distribution based on the mean best position and a logarithmic factor, which has roots in the quantum mechanics principles mentioned previously. The QPSO update rule leverages quantum-inspired probabilistic movements to balance exploration and exploitation. By combining the best aspects of personal and global experiences and adding a stochastic component, QPSO can effectively search complex optimization landscapes. 
 
- The key steps in QPSO include:
-
-### Mean Best Position
- 
-Mean Best Position ($mb$) is a weighted average of the personal best position ($p$) and the global best position ($g$). It is calculated as:
-
-```math
-mb=\beta \cdot p+(1−\beta) \cdot g
-
-```
-
-Where:
-
-* $\beta$ is a parameter controlling the influence between the personal and global best positions.
-
-### Position Update
-
- In QPSO, instead of updating the velocity and then the position, we directly update the position using quantum mechanics-inspired rules. The update rule is:
-
-```math
-x_i(t+1) = mb \pm \beta \cdot \lvert p - g \rvert \cdot \log(1/u)
-```
-
-Where:
-
-* $mb$ is the mean best position
-* $\beta$ is a user-defined parameter influencing convergence behavior.
-* $p$ is the personal best position of the particle.
-* $g$ is the global best position of the swarm.
-* $u$ is a uniformly distributed random number in the range (0, 1).
-* The logarithmic term $log(1/u)$ comes from the distribution properties of quantum systems.
-* $\beta \cdot \lvert p−g \rvert $ scales the exploration step based on the distance between the personal and global best positions.
-* $log(1/u)$ introduces a random factor with a bias towards smaller values (since $u$ is between 0 and 1, $log(1/u)$ is negative, making $−log⁡(1/u)$ positive).
+For Quantum Chicken Swarm Optimization (QCSO), the movement rules are respected from the classical versions, but the position changes are implemented slightly different. In [4]   
 
 
-The QPSO update rule is based on the quantum mechanics principle where particles have a probability distribution of being in different positions. The position update rule can be seen as a way to explore the search space more effectively through 2 key factors:
+Generally, the movement rules for each type of bird in QCSO can be described as:
 
-**Diverse Exploration**: The term $log⁡(1/u_2)$ helps in creating a wide range of possible moves, allowing the particles to explore the search space extensively. The logarithmic function is chosen because it provides a heavy-tailed distribution, meaning particles can make both small and large jumps, avoiding local minima and encouraging global exploration.
+### Quantum Roosters
 
-**Balanced Exploitation**: The combination of $mb$, $p$, and $g$ ensures that the particles are guided towards promising regions of the search space, leveraging both individual experience (personal_best) and collective knowledge (global_best).
+    Roosters have the best positions (fitness values) in the swarm. They move based on their current position and the random perturbation to avoid getting stuck in local optima.
+
+    This implementation has a toggle for using classical or quantum behavior for the roosters.
+
+    The quantum-inspired implementation ....
+
+
+
+
+
+
+
+### Quantum Hens
+
+    Hens follow roosters. They update their positions based on the positions of the roosters they follow and a randomly selected chicken. This reflects the social hierarchy and interaction in the swarm.
+
+    The quantum-inspired implementation ....
+
+
+
+
+
+### Quantum Chicks
+
+    Chicks follow their mother hens. They update their positions based on their mother's positions with some random factor to simulate the dependent behavior.
+
+
+    The quantum-inspired implementation ....
+
+
+
+
+
+
+
+
+
 
 
 
@@ -200,6 +208,15 @@ NOTE: if you close the graph as the code is running, the code will continue to r
 ## References
 
 [1] X. B. Meng, Y. Liu, X. Gao, and H. Zhang, "A new bio-inspired algorithm: Chicken swarm optimization," in Proc. Int. Conf. Swarm Intell. Cham, Switzerland, Springer, 2014, pp. 86–94.
+
+[2] Jun Sun, Bin Feng and Wenbo Xu, "Particle swarm optimization with particles having quantum behavior," Proceedings of the 2004 Congress on Evolutionary Computation (IEEE Cat. No.04TH8753), Portland, OR, USA, 2004, pp. 325-331 Vol.1, doi: 10.1109/CEC.2004.1330875.
+
+[3] Jun Sun, Wenbo Xu and Bin Feng, "A global search strategy of quantum-behaved particle swarm optimization," IEEE Conference on Cybernetics and Intelligent Systems, 2004., Singapore, 2004, pp. 111-116 vol.1, doi: 10.1109/ICCIS.2004.1460396.
+  
+[4] Z. Qiuqiao, B. Wang, L. Wei and W. Haishan, "Chicken swarm optimization algorithm based on quantum behavior and its convergence analysis," 2020 39th Chinese Control Conference (CCC), Shenyang, China, 2020, pp. 2107-2112, doi: 10.23919/CCC50068.2020.9189572.
+
+[5] IEEE link
+
 
 ## Publications and Integration
 This software works as a stand-alone implementation, and as one of the optimizers integrated into AntennaCAT.
