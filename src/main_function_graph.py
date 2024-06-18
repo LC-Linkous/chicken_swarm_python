@@ -1,8 +1,8 @@
 #! /usr/bin/python3
 
 ##-------------------------------------------------------------------------------\
-#   chicken_swarm_python
-#   './chicken_swarm_python/src/main_function_graph.py'
+#   chicken_swarm_quantum
+#   './chicken_swarm_quantum/src/main_function_graph.py'
 #   generates graphs for function based on constraints and configurations
 #   in-package demo for graphing the pareto front
 #

@@ -1,15 +1,15 @@
 #! /usr/bin/python3
 
 ##--------------------------------------------------------------------\
-#   chicken_swarm_python
-#   './chicken_swarm_python/src/chicken_swarm.py'
-#   A basic chicken swarm optimization class. This class follows the same 
+#   chicken_swarm_quantum
+#   './chicken_swarm_quantum/src/chicken_swarm.py'
+#   A quantum-inspired chicken swarm optimization class. This class follows the same 
 #       format as pso_python and pso_basic to make them interchangeable
 #       in function calls. 
 #       
 #
 #   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: June 14, 2024
+#   Last update: June 18, 2024
 ##--------------------------------------------------------------------\
 
 

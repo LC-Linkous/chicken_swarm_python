@@ -1,8 +1,8 @@
 #! /usr/bin/python3
 
 ##--------------------------------------------------------------------\
-#   chicken_swarm_python
-#   './chicken_swarm_python/src/func_F.py'
+#   chicken_swarm_quantum
+#   './chicken_swarm_quantum/src/func_F.py'
 #   Function for objective function evaluation.
 #   Has checks for floating point error, but these should never trigger
 #       if constraints have been properly applied.

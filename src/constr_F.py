@@ -1,8 +1,8 @@
 #! /usr/bin/python3
 
 ##--------------------------------------------------------------------\
-#   chicken_swarm_python
-#   './chicken_swarm_python/src/constr_F.py'
+#   chicken_swarm_quantum
+#   './chicken_swarm_quantum/src/constr_F.py'
 #   Function for objective function constraints.
 #   Has 2 checks: 1 for the function limitations, 1 for float size
 #   Returns True if x array passes constraints check, False otherwise   

@@ -1,8 +1,8 @@
 #! /usr/bin/python3
 
 ##--------------------------------------------------------------------\
-#   chicken_swarm_python
-#   './chicken_swarm_python/src/main_test.py'
+#   chicken_swarm_quantum
+#   './chicken_swarm_quantum/src/main_test.py'
 #   Test function/example for using the 'swarm' class in cat_swarm.py.
 #       This has been modified from the original to include message 
 #       passing back to the parent class or testbench, rather than printing

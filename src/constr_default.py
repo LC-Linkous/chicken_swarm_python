@@ -1,8 +1,8 @@
 #! /usr/bin/python3
 
 ##--------------------------------------------------------------------\
-#   chicken_swarm_python
-#   './chicken_swarm_python/src/constr_default.py'
+#   chicken_swarm_quantum
+#   './chicken_swarm_quantum/src/constr_default.py'
 #   Function for default constraints. Called if user does not pass in 
 #       constraints for objective function or problem being optimized. 
 #
