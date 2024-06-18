@@ -1,12 +1,18 @@
 # chicken_swarm_python
 
-Basic chicken swarm optimizer written in Python.  Modified from the [adaptive timestep PSO optimizer](https://github.com/jonathan46000/pso_python) by [jonathan46000](https://github.com/jonathan46000) to keep a consistent format across optimizers in AntennaCAT.
+# IN PROGRESS!!!!
+
+A 'quantum' particle swarm optimizer written in Python using quantum inspired methods (non-qiskit version).  Modified from the [adaptive timestep PSO optimizer](https://github.com/jonathan46000/pso_python) by [jonathan46000](https://github.com/jonathan46000) to keep a consistent format across optimizers in AntennaCAT.
 
 
 Now featuring AntennaCAT hooks for GUI integration and user input handling.
  
 ## Table of Contents
 * [Chicken Swarm Optimization](#chicken-swarm-optimization)
+* [Quantum Inspired Optimization](#quantum-inspired-optimization)
+* [Quantum Particle Swarm Optimization](#quantum-particle-swarm-optimization)
+    * [Mean Best Position](#mean-best-position)
+    * [Position Update](#position-update)
 * [Requirements](#requirements)
 * [Implementation](#implementation)
     * [Constraint Handling](#constraint-handling)
@@ -39,6 +45,74 @@ In CSO, there is an absence of a direct random velocity component, which is an i
 3) Chicks:
 
     Chicks follow their mother hens. They update their positions based on their mother's positions with some random factor to simulate the dependent behavior.
+
+## Quantum Inspired Optimization
+
+Quantum Particle Swarm Optimization (QPSO) was introduced in 2004 [2] [3]. Paraphrased from [2], in PSO the location and velocity vectors are used to determine the trajectory of the particle, which because in Newtonian mechanics a particle moves along a determined trajectory. However, in quantum mechanics, the location and velocity vectors cannot be determined/known simultaneously due to uncertainty principle (Werner Heisenberg, 1927). The takeaway being, quantum-inspired algorithms take concepts from quantum mechanics, such as superposition and entanglement, and apply them in classical computation to solve optimization problems more effectively (depending on the problem type). These two concepts are applied, generally speaking, as follows:
+
+1) Superposition
+
+**Quantum Concept**: In quantum mechanics, a particle can exist in a superposition of multiple states simultaneously. For example, a quantum bit (qubit) can be in a state ∣0⟩∣0⟩, ∣1⟩∣1⟩, or any linear combination ∣ψ⟩=α∣0⟩+β∣1⟩∣ψ⟩=α∣0⟩+β∣1⟩, where α and β are complex numbers.
+
+**Classical Adaptation**: In quantum-inspired algorithms, superposition can be interpreted as a probability distribution over multiple states. Instead of particles having a single position, they are represented by a probability distribution, reflecting the potential to be in various positions simultaneously.
+
+**Example in QPSO**: In the Quantum-inspired Particle Swarm Optimization, a particle’s position is often updated using a probability distribution derived from both personal best and global best positions, rather than a deterministic position update. This allows particles to explore the search space more effectively.
+
+2) Entanglement
+
+**Quantum Concept**: Entanglement is a phenomenon where particles become interconnected such that the state of one particle directly affects the state of another, no matter the distance between them. This creates a strong correlation between the particles.
+
+**Classical Adaptation**: In quantum-inspired algorithms, entanglement can be represented as a dependency or correlation between particles. When one particle updates its position, it influences the position updates of other particles, promoting cooperative behavior among the particles in the swarm.
+
+**Example in QPSO**: In QPSO, the positions of particles might be updated using a combination of their personal best position and the global best position, creating a form of "entanglement" where particles are influenced by the best solutions found by the swarm, thus maintaining a level of coordination and cooperation.
+
+
+## Quantum Particle Swarm Optimization
+
+Unlike traditional PSO, Quantum Particle Swarm Optimization (QPSO) doesn't use a velocity vector. Instead, it updates particle positions directly based on a probability distribution based on the mean best position and a logarithmic factor, which has roots in the quantum mechanics principles mentioned previously. The QPSO update rule leverages quantum-inspired probabilistic movements to balance exploration and exploitation. By combining the best aspects of personal and global experiences and adding a stochastic component, QPSO can effectively search complex optimization landscapes. 
+
+ The key steps in QPSO include:
+
+### Mean Best Position
+ 
+Mean Best Position ($mb$) is a weighted average of the personal best position ($p$) and the global best position ($g$). It is calculated as:
+
+```math
+mb=\beta \cdot p+(1−\beta) \cdot g
+
+```
+
+Where:
+
+* $\beta$ is a parameter controlling the influence between the personal and global best positions.
+
+### Position Update
+
+ In QPSO, instead of updating the velocity and then the position, we directly update the position using quantum mechanics-inspired rules. The update rule is:
+
+```math
+x_i(t+1) = mb \pm \beta \cdot \lvert p - g \rvert \cdot \log(1/u)
+```
+
+Where:
+
+* $mb$ is the mean best position
+* $\beta$ is a user-defined parameter influencing convergence behavior.
+* $p$ is the personal best position of the particle.
+* $g$ is the global best position of the swarm.
+* $u$ is a uniformly distributed random number in the range (0, 1).
+* The logarithmic term $log(1/u)$ comes from the distribution properties of quantum systems.
+* $\beta \cdot \lvert p−g \rvert $ scales the exploration step based on the distance between the personal and global best positions.
+* $log(1/u)$ introduces a random factor with a bias towards smaller values (since $u$ is between 0 and 1, $log(1/u)$ is negative, making $−log⁡(1/u)$ positive).
+
+
+The QPSO update rule is based on the quantum mechanics principle where particles have a probability distribution of being in different positions. The position update rule can be seen as a way to explore the search space more effectively through 2 key factors:
+
+**Diverse Exploration**: The term $log⁡(1/u_2)$ helps in creating a wide range of possible moves, allowing the particles to explore the search space extensively. The logarithmic function is chosen because it provides a heavy-tailed distribution, meaning particles can make both small and large jumps, avoiding local minima and encouraging global exploration.
+
+**Balanced Exploitation**: The combination of $mb$, $p$, and $g$ ensures that the particles are guided towards promising regions of the search space, leveraging both individual experience (personal_best) and collective knowledge (global_best).
+
+
 
 ## Requirements
 
