@@ -6,7 +6,11 @@
 #   A quantum-inspired chicken swarm optimization class. This class follows the same 
 #       format as pso_python and pso_basic to make them interchangeable
 #       in function calls. 
-#       
+#
+#   This approach mimics a general and very simple probablistic approach.
+#       It is not meant to directly mimic qiskit or other libraries.
+#       This is a snapshot of some of the most basic behavior found in
+#       literature. #       
 #
 #   Author(s): Lauren Linkous, Jonathan Lundquist
 #   Last update: June 18, 2024
@@ -14,7 +18,7 @@
 
 
 import numpy as np
-from numpy.random import Generator, MT19937, shuffle, choice, randint, uniform
+from numpy.random import Generator, MT19937, choice, randint
 import sys
 import time
 np.seterr(all='raise')
@@ -35,6 +39,8 @@ class swarm:
                  output_size, targets,
                  E_TOL, maxit, boundary, obj_func, constr_func,
                  RN=3, HN=12, MN=8, CN=15, G = 150,
+                 beta=0.5, quantum_roosters = False,
+                 input_size=3,
                  parent=None, detailedWarnings=False):  
 
         
@@ -206,7 +212,10 @@ class swarm:
             self.CN                     : Number of chicks. Integer.  
             self.chicken_info           : classification (R,H,C), group #, mother ID. Array.          
             self.G                      : How often to randomize groups. Integer.
-            self.output_size            : An integer value for the output size of obj func
+            self.quantum_roosters       : Boolean. 
+            self.beta                   : Float constant controlling influence between the personal and global best positions
+            self.output_size            : An integer value for the output size of obj func (y-vals)
+            self.input_size             : An integer value for the input size of the obj func (x-vals)
             self.Active                 : An array indicating the activity status of each particle. (e.g., in bounds)
             self.Gb                     : Global best position, initialized with a large value.
             self.F_Gb                   : Fitness value corresponding to the global best position.
@@ -230,7 +239,11 @@ class swarm:
             self.delta_t                : static time modulation. retained for comparison to original repo. and swarm export
             '''
 
+
+            self.quantum_roosters = quantum_roosters
+            self.beta = beta
             self.output_size = output_size
+            self.input_size = input_size
             self.Active = np.ones((NO_OF_PARTICLES))                        
             self.Gb = sys.maxsize*np.ones((np.max([heightl, widthl]),1))   
             self.F_Gb = sys.maxsize*np.ones((output_size,1))                
@@ -273,88 +286,84 @@ class swarm:
     # MOVEMENT MODELS
 
     def move_rooster(self, particle):
-        # epsilon = 'smallest system constant'. improvised.
-        epsilon = 10e-50 
+        # roosters in this class can exhibit classical or quantum behavior based on a user-set bool
 
-        # choose a random rooster
-        rooster_arr = np.arange(self.RN)
-        random_rooster_idx = choice(rooster_arr)
-        # use L2 norm for fitness to account for multi-objective funcs
-        random_rooster_fitness = np.linalg.norm(self.F_Pb[:, random_rooster_idx])
+        if self.quantum_roosters == False:
+
+            # epsilon = 'smallest system constant'. improvised.
+            epsilon = 10e-50 
+
+            # choose a random rooster
+            rooster_arr = np.arange(self.RN)
+            random_rooster_idx = choice(rooster_arr)
+            # use L2 norm for fitness to account for multi-objective funcs
+            random_rooster_fitness = np.linalg.norm(self.F_Pb[:, random_rooster_idx])
+            
+            this_rooster_fitness = np.linalg.norm(self.F_Pb[:, particle])
+
+            if this_rooster_fitness <= random_rooster_fitness:
+                sig_squared = 1
+            else:
+                # exp((fitness_random_rooster - fitness_this_rooster)/(abs(fitness_this_rooster)-epsilon))
+                #sig_squared = np.exp((random_rooster_fitness-this_rooster_fitness)/(abs(this_rooster_fitness)+epsilon))
+                # -709.00 and 709.00 are the integer limits to np.exp() on system that handles float64 at most (Windows)
+                clipped_val = np.clip(((random_rooster_fitness-this_rooster_fitness)/(abs(this_rooster_fitness)+epsilon)), -709.00, 709.00)
+                sig_squared = np.exp(clipped_val)
+
+
+            #update new location based on random()
+            self.M[:, particle] = self.M[:, particle]*(1+np.random.normal(0, sig_squared))
         
-        this_rooster_fitness = np.linalg.norm(self.F_Pb[:, particle])
-
-        if this_rooster_fitness <= random_rooster_fitness:
-            sig_squared = 1
         else:
-            # exp((fitness_random_rooster - fitness_this_rooster)/(abs(fitness_this_rooster)-epsilon))
-            #sig_squared = np.exp((random_rooster_fitness-this_rooster_fitness)/(abs(this_rooster_fitness)+epsilon))
-            # -709.00 and 709.00 are the integer limits to np.exp() on system that handles float64 at most (Windows)
-            clipped_val = np.clip(((random_rooster_fitness-this_rooster_fitness)/(abs(this_rooster_fitness)+epsilon)), -709.00, 709.00)
-            sig_squared = np.exp(clipped_val)
 
+            # duplicate locals to stick with eqs. in README
+            p = self.Pb[:, particle]             # personal best
+            g = np.hstack(self.Gb)               # global best
 
-        #update new location based on random()
-        self.M[:, particle] = self.M[:, particle]*(1+np.random.normal(0, sig_squared))
-        
+            # Mean Best Position (for the cat)
+            mb = self.beta* p + (1 - self.beta) * g
+
+            # Position Update (Update Rule)
+            u = np.random.uniform(size=(1,self.input_size))
+            self.M[:, particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
+
 
     def move_hen(self, particle):
-        #newLoc = oldLoc 
-        # + S1*RANDOM(0-to-1)*(LocationRoosterGroupmate-thisChickenLocation)
-        #  + S2*RANDOM(0-to-1)*(LoctionRandomChickenInSwarm-thisChickenLocation)
-        # where:
-        #   S1 = exp((FitnessThisChicken-FitnessRoosterGroupmate)/(abs(FitnessThisChicken)+epsilon))
-        #   S2 = exp(FitnessRandomChickenInSwarm-FitnessThisChicken)
-        # NOTE: FitnessRoosterGroupmate and FitnessRandomChickenInSwarm cannot be the same chicken
 
         # get the rooster information
         group_rooster_idx = int(self.chicken_info[1][particle]) #also the group index
         rooster_loc = self.M[:, group_rooster_idx]
-        fitness_rooster = np.linalg.norm(self.F_Pb[:, group_rooster_idx])
-        
-        # get the random chicken information
-        # initial random
-        random_chicken_idx = randint(0, self.number_of_particles)
-        # random cannot be the idx of the rooster, the current chicken, or be from a chick
-        while (random_chicken_idx == group_rooster_idx) or \
-                        (random_chicken_idx == particle) or \
-                        (int(self.chicken_info[0][random_chicken_idx]) == 3):
-            random_chicken_idx = randint(0, self.number_of_particles)
 
-        random_chicken_loc = self.M[:, random_chicken_idx]
-        fitness_random_chicken = np.linalg.norm(self.F_Pb[:, random_chicken_idx])
+        # duplicate locals to stick with eqs. in README
+        p = self.Pb[:, particle]             # personal best
+        g = np.hstack(rooster_loc)           # rooster best bc that's the well
 
-        fitness_this_chicken = np.linalg.norm(self.F_Pb[:, particle])
+        # Mean Best Position
+        mb = self.beta* p + (1 - self.beta) * g
 
-        # epsilon = 'smallest system constant'. improvised.
-        epsilon = 10e-50 
+        # Position Update (Update Rule)
+        u = np.random.uniform(size=(1,self.input_size))
+        self.M[:, particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
 
-        # exp((FitnessThisChicken-FitnessRoosterGroupmate)/(abs(FitnessThisChicken)+epsilon))
-        #S1 = np.exp((fitness_this_chicken-fitness_rooster)/(np.abs(fitness_this_chicken) + epsilon))
-        clipped_val = np.clip(((fitness_this_chicken-fitness_rooster)/(np.abs(fitness_this_chicken) + epsilon)), -709.00, 709.00)
-        S1 = np.exp(clipped_val)
-        # S1*RANDOM(0-to-1)*(LocationRoosterGroupmate-thisChickenLocation)
-        term_1 = S1*uniform(0,1)*(rooster_loc-self.M[:, particle])
-
-        #S2 = np.exp(float(fitness_random_chicken-fitness_this_chicken))
-        #np.exp(...) throws overflow errors. Using clip as a generic catch
-        clipped_val = np.clip((fitness_random_chicken-fitness_this_chicken), -709.00, 709.00)
-        S2 = np.exp(clipped_val)
-        #S2*RANDOM(0-to-1)*(LoctionRandomChickenInSwarm-thisChickenLocation)
-        term_2 = S2*uniform(0,1)*(random_chicken_loc-self.M[:, particle])
-
-        # new_loc = old_loc + term_1 + term_2
-        self.M[:, particle] = self.M[:, particle] + term_1 + term_2
 
 
     def move_chick(self, particle):
-        #nextLoc = currentLoc + FL*(locationMother - currentLoc)
-        # NOTE: FL is a value 0 or 2 that determines if a chick follows the mother
-        #  The chick RANDOMLY chooses between 0 or 2
-
+        
+        # get the mother hen location
         mother_idx = int(self.chicken_info[2][particle]) # the the idx of the mother chicken
         mother_loc = self.M[:, mother_idx]
-        self.M[:, particle] = self.M[:, particle] + choice([0,2])*(mother_loc-self.M[:, particle])
+
+        # duplicate locals to stick with eqs. in README
+        p = self.Pb[:, particle]             # personal best
+        g = np.hstack(mother_loc)            # mother best bc that's the well
+
+        # Mean Best Position
+        mb = self.beta* p + (1 - self.beta) * g
+
+        # Position Update (Update Rule)
+        u = np.random.uniform(size=(1,self.input_size))
+        self.M[:, particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
+
 
     def reorganize_swarm(self):
         # rank the chickens' fitness vals and establish hierarchial order
@@ -484,8 +493,6 @@ class swarm:
         constr = self.constr_func(self.M[:,particle])
         if (update > 0) and constr:
             self.M[:,particle] = 1*self.Mlast
-            NewV = np.multiply(-1,self.V[update-1,particle])
-            self.V[update-1,particle] = NewV
         if not constr:
             self.random_bound(particle)
 
@@ -494,7 +501,6 @@ class swarm:
         constr = self.constr_func(self.M[:,particle])
         if (update > 0) and constr:
             self.M[:,particle] = 1*self.Mlast
-            self.V[update-1,particle] = 0
         if not constr:
             self.random_bound(particle)
 
@@ -600,7 +606,6 @@ class swarm:
         swarm_export = {'lbound': self.lbound,
                         'ubound': self.ubound,
                         'M': self.M,
-                        'V': self.V,
                         'Gb': self.Gb,
                         'F_Gb': self.F_Gb,
                         'Pb': self.Pb,
@@ -626,7 +631,6 @@ class swarm:
         self.lbound = swarm_export['lbound'] 
         self.ubound = swarm_export['ubound'] 
         self.M = swarm_export['M'] 
-        self.V = swarm_export['V'] 
         self.Gb = swarm_export['Gb'] 
         self.F_Gb = swarm_export['F_Gb'] 
         self.Pb = swarm_export['Pb'] 
