@@ -1,14 +1,12 @@
 # chicken_swarm_quantum
 
-# IN PROGRESS!!!!
-
 A 'quantum' particle swarm optimizer written in Python using quantum inspired methods (non-qiskit version).  Modified from the [adaptive timestep PSO optimizer](https://github.com/jonathan46000/pso_python) by [jonathan46000](https://github.com/jonathan46000) to keep a consistent format across optimizers in AntennaCAT.
 
 
 Now featuring AntennaCAT hooks for GUI integration and user input handling.
  
 
-This branch of the repository is part of a series of replication studies. It is not intended to be the 'best' implementation, or the most recent update. This method has been chosen to replicate a specific snapshot of literature.
+This branch of the repository is part of a series of replication studies. It is not intended to be the 'best' implementation, or the most recent advancement. This method has been chosen to replicate a specific snapshot of literature. This example may even be overly simplified, but it is meant as a demonstration of the algorithm as part of a replication study collection and not an improvement.
 
 
 ## Table of Contents
@@ -86,11 +84,46 @@ Generally, the movement rules for each type of bird in QCSO can be described as:
 
     This implementation has a toggle for using classical or quantum behavior for the roosters.
 
-    The quantum-inspired implementation ....
+    The quantum-inspired implementation uses the mean best position and the QPSO update rule to change positions.
+  
+#### Mean Best Position
+ 
+Mean Best Position ($mb$) is a weighted average of the personal best position ($p$) and the global best position ($g$). It is calculated as:
+
+```math
+mb=\beta \cdot p+(1−\beta) \cdot g
+
+```
+
+Where:
+
+* $\beta$ is a parameter controlling the influence between the personal and global best positions.
+
+#### Position Update
+
+ In QPSO, instead of updating the velocity and then the position, we directly update the position using quantum mechanics-inspired rules. The update rule is:
+
+```math
+x_i(t+1) = mb \pm \beta \cdot \lvert p - g \rvert \cdot \log(1/u)
+```
+
+Where:
+
+* $mb$ is the mean best position
+* $\beta$ is a user-defined parameter influencing convergence behavior.
+* $p$ is the personal best position of the particle.
+* $g$ is the global best position of the swarm.
+* $u$ is a uniformly distributed random number in the range (0, 1).
+* The logarithmic term $log(1/u)$ comes from the distribution properties of quantum systems.
+* $\beta \cdot \lvert p−g \rvert $ scales the exploration step based on the distance between the personal and global best positions.
+* $log(1/u)$ introduces a random factor with a bias towards smaller values (since $u$ is between 0 and 1, $log(1/u)$ is negative, making $−log⁡(1/u)$ positive).
 
 
+The QPSO update rule is based on the quantum mechanics principle where particles have a probability distribution of being in different positions. The position update rule can be seen as a way to explore the search space more effectively through 2 key factors:
 
+**Diverse Exploration**: The term $log⁡(1/u_2)$ helps in creating a wide range of possible moves, allowing the particles to explore the search space extensively. The logarithmic function is chosen because it provides a heavy-tailed distribution, meaning particles can make both small and large jumps, avoiding local minima and encouraging global exploration.
 
+**Balanced Exploitation**: The combination of $mb$, $p$, and $g$ ensures that the particles are guided towards promising regions of the search space, leveraging both individual experience (personal_best) and collective knowledge (global_best).
 
 
 
@@ -98,10 +131,7 @@ Generally, the movement rules for each type of bird in QCSO can be described as:
 
     Hens follow roosters. They update their positions based on the positions of the roosters they follow and a randomly selected chicken. This reflects the social hierarchy and interaction in the swarm.
 
-    The quantum-inspired implementation ....
-
-
-
+    The quantum-inspired implementation uses the mean best position and the QPSO update rule to change positions, just like the roosters. However, the $g$ position, rather than being the global, is the position of the hen's rooster.
 
 
 ### Quantum Chicks
@@ -109,15 +139,7 @@ Generally, the movement rules for each type of bird in QCSO can be described as:
     Chicks follow their mother hens. They update their positions based on their mother's positions with some random factor to simulate the dependent behavior.
 
 
-    The quantum-inspired implementation ....
-
-
-
-
-
-
-
-
+        The quantum-inspired implementation uses the mean best position and the QPSO update rule to change positions, just like the roosters. However, the $g$ position, rather than being the global, is the position of the chick's mother.
 
 
 
@@ -198,7 +220,7 @@ main_test_details.py provides an example using a parent class, and the self.supp
 ### Realtime Graph
 
 <p align="center">
-        <img src="https://github.com/LC-Linkous/chicken_swarm_python/blob/main/media/chicken_swarm.gif" alt="Example Chicken Swarm Optimizer" height="200">
+        <img src="https://github.com/LC-Linkous/chicken_swarm_python/blob/chicken_swarm_quantum/media/qchicken_swarm.gif" alt="Example Quantum Inspired Chicken Swarm Optimizer" height="200">
 </p>
 
 main_test_graph.py provides an example using a parent class, and the self.suppress_output and detailedWarnings flags to control error messages that are passed back to the parent class to be printed with a timestamp. Additionally, a realtime graph shows particle locations at every step. 
@@ -215,7 +237,7 @@ NOTE: if you close the graph as the code is running, the code will continue to r
   
 [4] Z. Qiuqiao, B. Wang, L. Wei and W. Haishan, "Chicken swarm optimization algorithm based on quantum behavior and its convergence analysis," 2020 39th Chinese Control Conference (CCC), Shenyang, China, 2020, pp. 2107-2112, doi: 10.23919/CCC50068.2020.9189572.
 
-[5] IEEE link
+[5] B. Chen, L. Cao, C. Chen, Y. Chen, and Y. Yue, “A comprehensive survey on the chicken swarm optimization algorithm and its applications: state-of-the-art and research challenges,” Artificial intelligence review, vol. 57, no. 7, Jun. 2024, doi: https://doi.org/10.1007/s10462-024-10786-3.
 
 
 ## Publications and Integration
