@@ -35,6 +35,7 @@ class TestGraph():
         LB = func_configs.LB              # Lower boundaries, [[0.21, 0, 0.1]]
         UB = func_configs.UB              # Upper boundaries, [[1, 1, 0.5]]   
         OUT_VARS = func_configs.OUT_VARS  # Number of output variables (y-values)
+        IN_VARS = func_configs.IN_VARS    # Number of input variables (x-values)
         TARGETS = func_configs.TARGETS    # Target values for output
 
         # chicken swarm specific
@@ -51,6 +52,11 @@ class TestGraph():
         MAXIT = 10000                       # Maximum allowed iterations
         BOUNDARY = 1                        # int boundary 1 = random,      2 = reflecting
                                             #              3 = absorbing,   4 = invisible
+
+        # quantum swarm variables
+        BETA = 0.5                  #Float constant controlling influence 
+                                        #between the personal and global best positions
+        QUANTUM_ROOSTERS = True     # Boolean. Use quantum rooster or classical movement
 
 
 
@@ -86,6 +92,8 @@ class TestGraph():
                         WEIGHTS, OUT_VARS, TARGETS,
                         E_TOL, MAXIT, BOUNDARY, func_F, constr_F, 
                         RN=RN, HN=HN, MN=MN, CN=CN, G=G,
+                        beta=BETA, quantum_roosters= QUANTUM_ROOSTERS,
+                        input_size=IN_VARS,
                         parent=parent, detailedWarnings=detailedWarnings)  
 
 

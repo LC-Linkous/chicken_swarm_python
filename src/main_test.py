@@ -25,6 +25,7 @@ if __name__ == "__main__":
     LB = [[0.21, 0, 0.1]]        # Lower boundaries
     UB = [[1, 1, 0.5]]           # Upper boundaries
     OUT_VARS = 2                 # Number of output variables (y-values)
+    IN_VARS = 3                  # Number of input variables (x-values)
     TARGETS = [0, 0]             # Target values for output
 
 
@@ -44,6 +45,12 @@ if __name__ == "__main__":
                                         #              3 = absorbing,   4 = invisible
 
 
+    # quantum swarm variables
+    BETA = 0.5                  #Float constant controlling influence 
+                                    #between the personal and global best positions
+    QUANTUM_ROOSTERS = True     # Boolean. Use quantum rooster or classical movement
+
+
     # swarm setup
     best_eval = 1
 
@@ -58,7 +65,9 @@ if __name__ == "__main__":
     mySwarm = swarm(NO_OF_PARTICLES, LB, UB,
                     WEIGHTS, OUT_VARS, TARGETS,
                     E_TOL, MAXIT, BOUNDARY, func_F, constr_F,
-                    RN=RN, HN=HN, MN=MN, CN=CN, G=G)  
+                    RN=RN, HN=HN, MN=MN, CN=CN, G=G,
+                    beta=BETA, quantum_roosters= QUANTUM_ROOSTERS,
+                    input_size=IN_VARS)  
     
 
     # instantiation of particle swarm optimizer 
