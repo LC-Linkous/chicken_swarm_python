@@ -14,7 +14,7 @@
 
 
 import numpy as np
-from numpy.random import Generator, MT19937, shuffle, choice, randint, uniform
+from numpy.random import Generator, MT19937
 import sys
 import time
 np.seterr(all='raise')
@@ -178,7 +178,7 @@ class swarm:
 
                 elif (classList[i-1] == 1) or (classList[i-1] == 2): #hen, mother hen
                     # assign to a random group.
-                    hen_group = choice(group_nums)
+                    hen_group = self.rng.choice(group_nums)
                     self.chicken_info = \
                         np.hstack([self.chicken_info, 
                                 np.vstack([classList[i-1], hen_group, -1])])
@@ -187,7 +187,7 @@ class swarm:
                     # select a random hen to be the 'mother' and assign to group
                     groupAssigned = False
                     while (groupAssigned == False):
-                        chicken_idx = randint(0, i-1)# index after a chick will always be the chick
+                        chicken_idx = self.rng.integers(0, i-1, endpoint=False)# index after a chick will always be the chick
                         if self.chicken_info[0][chicken_idx] == 2: #is mother hen
                             # get the group the random mother hen is from
                             mother_group = self.chicken_info[1][chicken_idx]         
@@ -278,7 +278,7 @@ class swarm:
 
         # choose a random rooster
         rooster_arr = np.arange(self.RN)
-        random_rooster_idx = choice(rooster_arr)
+        random_rooster_idx = self.rng.choice(rooster_arr)
         # use L2 norm for fitness to account for multi-objective funcs
         random_rooster_fitness = np.linalg.norm(self.F_Pb[:, random_rooster_idx])
         
@@ -295,7 +295,7 @@ class swarm:
 
 
         #update new location based on random()
-        self.M[:, particle] = self.M[:, particle]*(1+np.random.normal(0, sig_squared))
+        self.M[:, particle] = self.M[:, particle]*(1+self.rng.normal(0, sig_squared))
         
 
     def move_hen(self, particle):
@@ -314,12 +314,12 @@ class swarm:
         
         # get the random chicken information
         # initial random
-        random_chicken_idx = randint(0, self.number_of_particles)
+        random_chicken_idx = self.rng.integers(0, self.number_of_particles)
         # random cannot be the idx of the rooster, the current chicken, or be from a chick
         while (random_chicken_idx == group_rooster_idx) or \
                         (random_chicken_idx == particle) or \
                         (int(self.chicken_info[0][random_chicken_idx]) == 3):
-            random_chicken_idx = randint(0, self.number_of_particles)
+            random_chicken_idx = self.rng.integers(0, self.number_of_particles)
 
         random_chicken_loc = self.M[:, random_chicken_idx]
         fitness_random_chicken = np.linalg.norm(self.F_Pb[:, random_chicken_idx])
@@ -334,14 +334,14 @@ class swarm:
         clipped_val = np.clip(((fitness_this_chicken-fitness_rooster)/(np.abs(fitness_this_chicken) + epsilon)), -709.00, 709.00)
         S1 = np.exp(clipped_val)
         # S1*RANDOM(0-to-1)*(LocationRoosterGroupmate-thisChickenLocation)
-        term_1 = S1*uniform(0,1)*(rooster_loc-self.M[:, particle])
+        term_1 = S1*self.rng.uniform(0,1)*(rooster_loc-self.M[:, particle])
 
         #S2 = np.exp(float(fitness_random_chicken-fitness_this_chicken))
         #np.exp(...) throws overflow errors. Using clip as a generic catch
         clipped_val = np.clip((fitness_random_chicken-fitness_this_chicken), -709.00, 709.00)
         S2 = np.exp(clipped_val)
         #S2*RANDOM(0-to-1)*(LoctionRandomChickenInSwarm-thisChickenLocation)
-        term_2 = S2*uniform(0,1)*(random_chicken_loc-self.M[:, particle])
+        term_2 = S2*self.rng.uniform(0,1)*(random_chicken_loc-self.M[:, particle])
 
         # new_loc = old_loc + term_1 + term_2
         self.M[:, particle] = self.M[:, particle] + term_1 + term_2
@@ -354,7 +354,7 @@ class swarm:
 
         mother_idx = int(self.chicken_info[2][particle]) # the the idx of the mother chicken
         mother_loc = self.M[:, mother_idx]
-        self.M[:, particle] = self.M[:, particle] + choice([0,2])*(mother_loc-self.M[:, particle])
+        self.M[:, particle] = self.M[:, particle] + self.rng.choice([0,2])*(mother_loc-self.M[:, particle])
 
     def reorganize_swarm(self):
         # rank the chickens' fitness vals and establish hierarchial order
@@ -418,7 +418,7 @@ class swarm:
             elif (classList[i] == 1) or (classList[i] == 2): #hen, mother hen
                 # assign to a random group.
                 # CLASSIFICATION(0-4), GROUP(0-m), MOTHER-CHILD ID
-                hen_group = choice(group_nums)
+                hen_group = self.rng.choice(group_nums)
                 self.chicken_info = \
                     np.hstack([self.chicken_info, 
                             np.vstack([classList[i], hen_group, -1])])
@@ -428,7 +428,7 @@ class swarm:
                 # CLASSIFICATION(0-4), GROUP(0-m), MOTHER-CHILD ID
                 groupAssigned = False
                 while (groupAssigned == False):
-                    chicken_idx = randint(0, i)# index after a chick will always be the chick
+                    chicken_idx = self.rng.integers(0, i)# index after a chick will always be the chick
                     if self.chicken_info[0][chicken_idx] == 2: #is mother hen
                         # get the group the random mother hen is from
                         mother_group = self.chicken_info[1][chicken_idx]         
