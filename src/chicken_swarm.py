@@ -18,7 +18,7 @@
 
 
 import numpy as np
-from numpy.random import Generator, MT19937, choice, randint
+from numpy.random import Generator, MT19937
 import sys
 import time
 np.seterr(all='raise')
@@ -184,7 +184,7 @@ class swarm:
 
                 elif (classList[i-1] == 1) or (classList[i-1] == 2): #hen, mother hen
                     # assign to a random group.
-                    hen_group = choice(group_nums)
+                    hen_group = self.rng.choice(group_nums)
                     self.chicken_info = \
                         np.hstack([self.chicken_info, 
                                 np.vstack([classList[i-1], hen_group, -1])])
@@ -193,7 +193,7 @@ class swarm:
                     # select a random hen to be the 'mother' and assign to group
                     groupAssigned = False
                     while (groupAssigned == False):
-                        chicken_idx = randint(0, i-1)# index after a chick will always be the chick
+                        chicken_idx = self.rng.integers(0, i-1)# index after a chick will always be the chick
                         if self.chicken_info[0][chicken_idx] == 2: #is mother hen
                             # get the group the random mother hen is from
                             mother_group = self.chicken_info[1][chicken_idx]         
@@ -295,7 +295,7 @@ class swarm:
 
             # choose a random rooster
             rooster_arr = np.arange(self.RN)
-            random_rooster_idx = choice(rooster_arr)
+            random_rooster_idx = self.rng.choice(rooster_arr)
             # use L2 norm for fitness to account for multi-objective funcs
             random_rooster_fitness = np.linalg.norm(self.F_Pb[:, random_rooster_idx])
             
@@ -312,7 +312,7 @@ class swarm:
 
 
             #update new location based on random()
-            self.M[:, particle] = self.M[:, particle]*(1+np.random.normal(0, sig_squared))
+            self.M[:, particle] = self.M[:, particle]*(1+self.rng.normal(0, sig_squared))
         
         else:
 
@@ -324,7 +324,7 @@ class swarm:
             mb = self.beta* p + (1 - self.beta) * g
 
             # Position Update (Update Rule)
-            u = np.random.uniform(size=(1,self.input_size))
+            u = self.rng.uniform(size=(1,self.input_size))
             self.M[:, particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
 
 
@@ -342,7 +342,7 @@ class swarm:
         mb = self.beta* p + (1 - self.beta) * g
 
         # Position Update (Update Rule)
-        u = np.random.uniform(size=(1,self.input_size))
+        u = self.rng.uniform(size=(1,self.input_size))
         self.M[:, particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
 
 
@@ -361,7 +361,7 @@ class swarm:
         mb = self.beta* p + (1 - self.beta) * g
 
         # Position Update (Update Rule)
-        u = np.random.uniform(size=(1,self.input_size))
+        u = self.rng.uniform(size=(1,self.input_size))
         self.M[:, particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
 
 
@@ -427,7 +427,7 @@ class swarm:
             elif (classList[i] == 1) or (classList[i] == 2): #hen, mother hen
                 # assign to a random group.
                 # CLASSIFICATION(0-4), GROUP(0-m), MOTHER-CHILD ID
-                hen_group = choice(group_nums)
+                hen_group = self.rng.choice(group_nums)
                 self.chicken_info = \
                     np.hstack([self.chicken_info, 
                             np.vstack([classList[i], hen_group, -1])])
@@ -437,7 +437,7 @@ class swarm:
                 # CLASSIFICATION(0-4), GROUP(0-m), MOTHER-CHILD ID
                 groupAssigned = False
                 while (groupAssigned == False):
-                    chicken_idx = randint(0, i)# index after a chick will always be the chick
+                    chicken_idx = self.rng.integers(0, i-1, endpoint=False)# index after a chick will always be the chick
                     if self.chicken_info[0][chicken_idx] == 2: #is mother hen
                         # get the group the random mother hen is from
                         mother_group = self.chicken_info[1][chicken_idx]         
