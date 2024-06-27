@@ -76,10 +76,10 @@ class swarm:
         else:
         
             if heightl == 1:
-                lbound = np.vstack(lbound)
+                lbound = lbound
         
             if heightu == 1:
-                ubound = np.vstack(ubound)
+                ubound = ubound
 
             self.lbound = lbound
             self.ubound = ubound
@@ -139,7 +139,7 @@ class swarm:
             # first chicken is a rooster, in case there's only 1 searching agent
             # chicken_info = array of [CLASSIFICATION(0-4), GROUP(0-(RN-1)), MOTHER-HEN-ID]
             # classificition: 0 = rooster, 1 = hen, 2 = mother hen, 3 = chicks
-            self.chicken_info = np.vstack([0, 0, -1])
+            self.chicken_info = np.array([0, 0, -1])
 
             #randomly initialize the positions 
             self.M = np.vstack(np.multiply(self.rng.random((np.max([heightl, 
@@ -170,37 +170,40 @@ class swarm:
             for i in range(2,int(NO_OF_PARTICLES)+1):
                 # set initial location
                 self.M = \
-                    np.hstack([self.M, 
-                               np.vstack(np.multiply( self.rng.random((np.max([heightl, 
-                                                                               widthl]),
-                                                                               1)), 
+                    np.vstack([self.M, 
+                               np.multiply( self.rng.random((1,np.max([heightl, widthl]))), 
                                                                                variation) 
-                                                                               + lbound)])
+                                                                               + lbound])
                 if classList[i-1] == 0: #rooster
                     # assign to the next group (i-1), and done.
                     self.chicken_info = \
-                        np.hstack([self.chicken_info, 
-                                np.vstack([classList[i-1], i-1, -1])])
+                        np.vstack([self.chicken_info, 
+                                [classList[i-1], i-1, -1]])
 
                 elif (classList[i-1] == 1) or (classList[i-1] == 2): #hen, mother hen
                     # assign to a random group.
                     hen_group = self.rng.choice(group_nums)
                     self.chicken_info = \
-                        np.hstack([self.chicken_info, 
-                                np.vstack([classList[i-1], hen_group, -1])])
+                        np.vstack([self.chicken_info, 
+                                [classList[i-1], hen_group, -1]])
 
                 elif classList[i-1] == 3: #chick
                     # select a random hen to be the 'mother' and assign to group
                     groupAssigned = False
+
+                    # print("chicken info")
+                    # print(np.shape(self.chicken_info))
+                    # print(self.chicken_info)
+                    # print(self.chicken_info[0][chicken_idx])
                     while (groupAssigned == False):
                         chicken_idx = self.rng.integers(0, i-1)# index after a chick will always be the chick
-                        if self.chicken_info[0][chicken_idx] == 2: #is mother hen
+                        if self.chicken_info[chicken_idx][0] == 2: #is mother hen
                             # get the group the random mother hen is from
-                            mother_group = self.chicken_info[1][chicken_idx]         
+                            mother_group = self.chicken_info[chicken_idx][1]         
                             # assign chick to group, and to that mother hen                    
                             self.chicken_info = \
-                                np.hstack([self.chicken_info, 
-                                        np.vstack([classList[i-1], mother_group, chicken_idx])])
+                                np.vstack([self.chicken_info, 
+                                        [classList[i-1], mother_group, chicken_idx]])
                             groupAssigned = True
 
 
@@ -245,12 +248,12 @@ class swarm:
             self.output_size = output_size
             self.input_size = input_size
             self.Active = np.ones((NO_OF_PARTICLES))                        
-            self.Gb = sys.maxsize*np.ones((np.max([heightl, widthl]),1))   
-            self.F_Gb = sys.maxsize*np.ones((output_size,1))                
+            self.Gb = sys.maxsize*np.ones((1,np.max([heightl, widthl])))   
+            self.F_Gb = sys.maxsize*np.ones((1,output_size))                
             self.Pb = sys.maxsize*np.ones(np.shape(self.M))                 
-            self.F_Pb = sys.maxsize*np.ones((output_size,NO_OF_PARTICLES))  
-            self.weights = np.vstack(np.array(weights))                     
-            self.targets = np.vstack(np.array(targets))                     
+            self.F_Pb = sys.maxsize*np.ones((NO_OF_PARTICLES,output_size))  
+            self.weights = np.array(weights)                     
+            self.targets = np.array(targets)                      
             self.maxit = maxit                                             
             self.E_TOL = E_TOL                                              
             self.obj_func = obj_func                                             
@@ -272,7 +275,7 @@ class swarm:
     def call_objective(self, allow_update):
         if self.Active[self.current_particle]:
             # call the objective function. If there's an issue with the function execution, 'noError' returns False
-            newFVals, noError = self.obj_func(np.vstack(self.M[:,self.current_particle]), self.output_size)
+            newFVals, noError = self.obj_func(self.M[self.current_particle], self.output_size)
             if noError == True:
                 self.Fvals = newFVals
                 if allow_update:
@@ -282,7 +285,7 @@ class swarm:
                 else:
                     self.allow_update = 0
             return noError# return is for error reporting purposes only
-    
+   
     # MOVEMENT MODELS
 
     def move_rooster(self, particle):
@@ -297,9 +300,9 @@ class swarm:
             rooster_arr = np.arange(self.RN)
             random_rooster_idx = self.rng.choice(rooster_arr)
             # use L2 norm for fitness to account for multi-objective funcs
-            random_rooster_fitness = np.linalg.norm(self.F_Pb[:, random_rooster_idx])
+            random_rooster_fitness = np.linalg.norm(self.F_Pb[random_rooster_idx])
             
-            this_rooster_fitness = np.linalg.norm(self.F_Pb[:, particle])
+            this_rooster_fitness = np.linalg.norm(self.F_Pb[particle])
 
             if this_rooster_fitness <= random_rooster_fitness:
                 sig_squared = 1
@@ -312,30 +315,30 @@ class swarm:
 
 
             #update new location based on random()
-            self.M[:, particle] = self.M[:, particle]*(1+self.rng.normal(0, sig_squared))
+            self.M[particle] = self.M[particle]*(1+self.rng.normal(0, sig_squared))
         
         else:
 
             # duplicate locals to stick with eqs. in README
-            p = self.Pb[:, particle]             # personal best
-            g = np.hstack(self.Gb)               # global best
+            p = self.Pb[particle]             # personal best
+            g = np.hstack(self.Gb)            # global best
 
             # Mean Best Position (for the cat)
             mb = self.beta* p + (1 - self.beta) * g
 
             # Position Update (Update Rule)
             u = self.rng.uniform(size=(1,self.input_size))
-            self.M[:, particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
+            self.M[particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
 
 
     def move_hen(self, particle):
 
         # get the rooster information
-        group_rooster_idx = int(self.chicken_info[1][particle]) #also the group index
-        rooster_loc = self.M[:, group_rooster_idx]
+        group_rooster_idx = int(self.chicken_info[particle][1]) #also the group index
+        rooster_loc = self.M[group_rooster_idx]
 
         # duplicate locals to stick with eqs. in README
-        p = self.Pb[:, particle]             # personal best
+        p = self.Pb[particle]             # personal best
         g = np.hstack(rooster_loc)           # rooster best bc that's the well
 
         # Mean Best Position
@@ -343,18 +346,18 @@ class swarm:
 
         # Position Update (Update Rule)
         u = self.rng.uniform(size=(1,self.input_size))
-        self.M[:, particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
+        self.M[particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
 
 
 
     def move_chick(self, particle):
         
         # get the mother hen location
-        mother_idx = int(self.chicken_info[2][particle]) # the the idx of the mother chicken
-        mother_loc = self.M[:, mother_idx]
+        mother_idx = int(self.chicken_info[particle][2]) # the the idx of the mother chicken
+        mother_loc = self.M[mother_idx]
 
         # duplicate locals to stick with eqs. in README
-        p = self.Pb[:, particle]             # personal best
+        p = self.Pb[particle]             # personal best
         g = np.hstack(mother_loc)            # mother best bc that's the well
 
         # Mean Best Position
@@ -362,7 +365,7 @@ class swarm:
 
         # Position Update (Update Rule)
         u = self.rng.uniform(size=(1,self.input_size))
-        self.M[:, particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
+        self.M[particle] = mb + self.beta * np.abs(p - g) * np.log(1 / u)
 
 
     def reorganize_swarm(self):
@@ -372,7 +375,7 @@ class swarm:
         #get the indexs that sort the personal best fitness from best (lowest) to worst
         l2_norm_vals = []
         for idx in range(0, self.number_of_particles):
-            l2_norm_vals.append(np.linalg.norm(self.F_Pb[:,idx]))
+            l2_norm_vals.append(np.linalg.norm(self.F_Pb[idx]))
       
         fitness_sort_idx = np.argsort(l2_norm_vals)# lowest are first
         
@@ -383,8 +386,8 @@ class swarm:
         ctr = 0
 
         for idx in fitness_sort_idx:
-            temp_M[:, ctr] = self.M[:,idx]
-            temp_F_Pb[:, ctr] = self.F_Pb[:,idx]
+            temp_M[ctr] = self.M[idx]
+            temp_F_Pb[ctr] = self.F_Pb[idx]
             temp_Active[ctr] = self.Active[idx]
             ctr = ctr + 1
         self.M = 1*temp_M
@@ -438,9 +441,9 @@ class swarm:
                 groupAssigned = False
                 while (groupAssigned == False):
                     chicken_idx = self.rng.integers(0, i-1, endpoint=False)# index after a chick will always be the chick
-                    if self.chicken_info[0][chicken_idx] == 2: #is mother hen
+                    if self.chicken_info[chicken_idx][0] == 2: #is mother hen
                         # get the group the random mother hen is from
-                        mother_group = self.chicken_info[1][chicken_idx]         
+                        mother_group = self.chicken_info[chicken_idx][1]         
                         # assign chick to group, and to that mother hen                    
                         self.chicken_info = \
                             np.hstack([self.chicken_info, 
@@ -452,9 +455,9 @@ class swarm:
   
     def check_bounds(self, particle):
         update = 0
-        for i in range(0,(np.shape(self.M)[0])):
-            if (self.lbound[i] > self.M[i,particle]) \
-               or (self.ubound[i] < self.M[i,particle]):
+        for i in range(0,(np.shape(self.M)[1])):
+            if (self.lbound[i] > self.M[particle,i]) \
+               or (self.ubound[i] < self.M[particle,i]):
                 update = i+1        
         return update
 
@@ -474,42 +477,41 @@ class swarm:
         # The first condition checks if constraints are met, 
         # and the second determins if the values are to large (positive or negitive)
         # and may cause a buffer overflow with large exponents (a bug that was found experimentally)
-        update = self.check_bounds(particle) or not self.constr_func(self.M[:,particle]) or not self.validate_obj_function(np.vstack(self.M[:,self.current_particle]))
-
+        update = self.check_bounds(particle) or not self.constr_func(self.M[particle]) or not self.validate_obj_function(np.hstack(self.M[self.current_particle]))
         if update > 0:
-            while (self.check_bounds(particle) > 0) or (self.constr_func(self.M[:,particle])==False) or (self.validate_obj_function(self.M[:,particle])==False): 
+            while(self.check_bounds(particle)>0) or (self.constr_func(self.M[particle])==False) or (self.validate_obj_function(self.M[particle])==False): 
                 variation = self.ubound-self.lbound
-                newVal = np.squeeze(self.rng.random() * 
-                                np.multiply(np.ones((np.shape(self.M)[0],1)),
-                                            variation) + self.lbound)
-
-                self.M[:,particle] = \
+                self.M[particle] = \
                     np.squeeze(self.rng.random() * 
-                                np.multiply(np.ones((np.shape(self.M)[0],1)),
+                                np.multiply(np.ones((1,np.shape(self.M)[1])),
                                             variation) + self.lbound)
             
     def reflecting_bound(self, particle):        
         update = self.check_bounds(particle)
-        constr = self.constr_func(self.M[:,particle])
+        constr = self.constr_func(self.M[particle])
         if (update > 0) and constr:
-            self.M[:,particle] = 1*self.Mlast
+            self.M[particle] = 1*self.Mlast
+            NewV = np.multiply(-1,self.V[update-1,particle])
+            self.V[update-1,particle] = NewV
         if not constr:
             self.random_bound(particle)
 
     def absorbing_bound(self, particle):
         update = self.check_bounds(particle)
-        constr = self.constr_func(self.M[:,particle])
+        constr = self.constr_func(self.M[particle])
         if (update > 0) and constr:
-            self.M[:,particle] = 1*self.Mlast
+            self.M[particle] = 1*self.Mlast
+            self.V[particle,update-1] = 0
         if not constr:
             self.random_bound(particle)
 
     def invisible_bound(self, particle):
-        update = self.check_bounds(particle) or not self.constr_func(self.M[:,particle]) or not self.validate_obj_function(self.M[:,particle])
+        update = self.check_bounds(particle) or not self.constr_func(self.M[particle]) or not self.validate_obj_function(self.M[particle])
         if update > 0:
             self.Active[particle] = 0  
         else:
             pass          
+
 
     def handle_bounds(self, particle):
         if self.boundary == 1:
@@ -526,12 +528,12 @@ class swarm:
     def check_global_local(self, Flist, particle):
 
         if np.linalg.norm(Flist) < np.linalg.norm(self.F_Gb):
-            self.F_Gb = Flist
-            self.Gb = np.vstack(np.array(self.M[:,particle]))
+            self.F_Gb = np.array([Flist])
+            self.Gb = np.array(self.M[particle])
         
-        if np.linalg.norm(Flist) < np.linalg.norm(self.F_Pb[:,particle]):
-            self.F_Pb[:,particle] = np.squeeze(Flist)
-            self.Pb[:,particle] = self.M[:,particle]
+        if np.linalg.norm(Flist) < np.linalg.norm(self.F_Pb[particle]):
+            self.F_Pb[particle] = np.squeeze(Flist)
+            self.Pb[particle] = self.M[particle]
     
     def converged(self):
         convergence = np.linalg.norm(self.F_Gb) < self.E_TOL
@@ -555,7 +557,7 @@ class swarm:
                 "Current Particle Active\n" + \
                 str(self.Active[self.current_particle]) +"\n" + \
                 "Current Particle Location\n" + \
-                str(self.M[:,self.current_particle]) +"\n" + \
+                str(self.M[self.current_particle]) +"\n" + \
                 "Absolute mean deviation\n" + \
                 str(self.absolute_mean_deviation_of_particles()) +"\n" + \
                 "-----------------------------"
@@ -576,7 +578,7 @@ class swarm:
                 # roosters are always at the top of the list so that they're moved first.
                 # Then the hens are moved. It doesn't matter which type of hen is moved first.
                 # Chicks are moved last so that they can follow the mother hens
-                chicken_type = self.chicken_info[0][self.current_particle]
+                chicken_type = self.chicken_info[self.current_particle][0]
                 if chicken_type == 0: #update rooster location
                     self.move_rooster(self.current_particle)
 
@@ -651,7 +653,7 @@ class swarm:
         self.obj_func = obj_func 
 
     def get_obj_inputs(self):
-        return np.vstack(self.M[:,self.current_particle])
+        return np.vstack(self.M[self.current_particle])
     
     def get_convergence_data(self):
         best_eval = np.linalg.norm(self.F_Gb)
@@ -665,12 +667,14 @@ class swarm:
         return self.F_Gb
     
     def absolute_mean_deviation_of_particles(self):
-        mean_data = np.vstack(np.mean(self.M,axis=1))
+        mean_data = np.array(np.mean(self.M, axis=0)).reshape(1, -1)
         abs_data = np.zeros(np.shape(self.M))
         for i in range(0,self.number_of_particles):
-            abs_data[:,i] = np.squeeze(np.abs(np.vstack(self.M[:,i])-mean_data))
-        abs_mean_dev = np.linalg.norm(np.mean(abs_data,axis=1))
+            abs_data[i] = np.squeeze(np.abs(self.M[i]-mean_data))
+
+        abs_mean_dev = np.linalg.norm(np.mean(abs_data,axis=0))
         return abs_mean_dev
+
 
     def error_message_generator(self, msg):
         if self.parent == None:
