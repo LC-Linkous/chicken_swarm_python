@@ -80,11 +80,11 @@ Generally, the movement rules for each type of bird in QCSO can be described as:
 
 ### Quantum Roosters
 
-    Roosters have the best positions (fitness values) in the swarm. They move based on their current position and the random perturbation to avoid getting stuck in local optima.
+* Roosters have the best positions (fitness values) in the swarm. They move based on their current position and the random perturbation to avoid getting stuck in local optima.
 
-    This implementation has a toggle for using classical or quantum behavior for the roosters.
+* This implementation has a toggle for using classical or quantum behavior for the roosters.
 
-    The quantum-inspired implementation uses the mean best position and the QPSO update rule to change positions.
+* The quantum-inspired implementation uses the mean best position and the QPSO update rule to change positions.
   
 #### Mean Best Position
  
@@ -129,17 +129,17 @@ The QPSO update rule is based on the quantum mechanics principle where particles
 
 ### Quantum Hens
 
-    Hens follow roosters. They update their positions based on the positions of the roosters they follow and a randomly selected chicken. This reflects the social hierarchy and interaction in the swarm.
+* Hens follow roosters. They update their positions based on the positions of the roosters they follow and a randomly selected chicken. This reflects the social hierarchy and interaction in the swarm.
 
-    The quantum-inspired implementation uses the mean best position and the QPSO update rule to change positions, just like the roosters. However, the $g$ position, rather than being the global, is the position of the hen's rooster.
+* The quantum-inspired implementation uses the mean best position and the QPSO update rule to change positions, just like the roosters. However, the $g$ position, rather than being the global, is the position of the hen's rooster.
 
 
 ### Quantum Chicks
 
-    Chicks follow their mother hens. They update their positions based on their mother's positions with some random factor to simulate the dependent behavior.
+* Chicks follow their mother hens. They update their positions based on their mother's positions with some random factor to simulate the dependent behavior.
 
 
-        The quantum-inspired implementation uses the mean best position and the QPSO update rule to change positions, just like the roosters. However, the $g$ position, rather than being the global, is the position of the chick's mother.
+* The quantum-inspired implementation uses the mean best position and the QPSO update rule to change positions, just like the roosters. However, the $g$ position, rather than being the global, is the position of the chick's mother.
 
 
 
