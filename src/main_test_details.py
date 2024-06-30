@@ -17,35 +17,44 @@
 import numpy as np
 import time
 from chicken_swarm import swarm
-import configs_F as func_configs
 
+# OBJECTIVE FUNCTION SELECTION
+#import one_dim_x_test.configs_F as func_configs     # single objective, 1D input
+import himmelblau.configs_F as func_configs         # single objective, 2D input
+#import lundquist_3_var.configs_F as func_configs     # multi objective function
 
 
 class TestDetails():
     def __init__(self):
-        # Objective function dependent variables
-        func_F = func_configs.OBJECTIVE_FUNC  # objective function
-        constr_F = func_configs.CONSTR_FUNC   # constraint function
-        LB = func_configs.LB              # Lower boundaries, [[0.21, 0, 0.1]]
-        UB = func_configs.UB              # Upper boundaries, [[1, 1, 0.5]]   
-        OUT_VARS = func_configs.OUT_VARS  # Number of output variables (y-values)
-        TARGETS = func_configs.TARGETS    # Target values for output
-
-        # chicken swarm specific
-        RN = 3                            # Total number of roosters
-        HN = 12                           # Total number of hens
-        MN = 8                            # Number of mother hens in total hens
-        CN = 15                           # Total number of chicks
-        G = 150                           # Reorganize groups every G steps 
-
         # swarm variables
-        NO_OF_PARTICLES = RN + HN + CN      # Number of particles in swarm
         WEIGHTS = [[2, 2.2, 2]]             # Update vector weights. Used as C1 constant in tracing mode.
         E_TOL = 10 ** -6                    # Convergence Tolerance
         MAXIT = 10000                       # Maximum allowed iterations
         BOUNDARY = 1                        # int boundary 1 = random,      2 = reflecting
                                             #              3 = absorbing,   4 = invisible
 
+
+
+        # Objective function dependent variables
+        LB = func_configs.LB                    # Lower boundaries, [[0.21, 0, 0.1]]
+        UB = func_configs.UB                    # Upper boundaries, [[1, 1, 0.5]]
+        IN_VARS = func_configs.IN_VARS          # Number of input variables (x-values)   
+        OUT_VARS = func_configs.OUT_VARS        # Number of output variables (y-values)
+        TARGETS = func_configs.TARGETS          # Target values for output
+
+        # Objective function dependent variables
+        func_F = func_configs.OBJECTIVE_FUNC  # objective function
+        constr_F = func_configs.CONSTR_FUNC   # constraint function
+
+        
+        
+        # chicken swarm specific
+        RN = 10                       # Total number of roosters
+        HN = 20                       # Total number of hens
+        MN = 15                       # Number of mother hens in total hens
+        CN = 20                       # Total number of chicks
+        G = 70                        # Reorganize groups every G steps 
+        NO_OF_PARTICLES = RN + HN + CN      # Number of particles in swarm
 
         # swarm setup
         parent = self                 # Optional parent class for swarm 

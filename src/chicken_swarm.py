@@ -333,14 +333,37 @@ class swarm:
         clipped_val = np.clip(((fitness_this_chicken-fitness_rooster)/(np.abs(fitness_this_chicken) + epsilon)), -709.00, 709.00)
         S1 = np.exp(clipped_val)
         # S1*RANDOM(0-to-1)*(LocationRoosterGroupmate-thisChickenLocation)
-        term_1 = S1*self.rng.uniform(0,1)*(rooster_loc-self.M[particle])
+        # these terms can overflow because of the exp()
+        # some S2 results are evaluating on the scale of 8.218407461554972e+307
+        # these clipped bounds are effectively are zero and inf
+        # term_1 = S1*self.rng.uniform(0,1)*(rooster_loc-self.M[particle])
+        # still dealing with overflow issues. apply cap to S1
+        if S1 > 10e50:
+            S1 = 10e50
+        elif S1 < -10e50:
+            S1 = -10e50
+        clipped_term1 = np.clip((S1*self.rng.uniform(0,1)*(rooster_loc-self.M[particle])), -10e50, 10e10)
+        term_1 = clipped_term1
 
         #S2 = np.exp(float(fitness_random_chicken-fitness_this_chicken))
         #np.exp(...) throws overflow errors. Using clip as a generic catch
         clipped_val = np.clip((fitness_random_chicken-fitness_this_chicken), -709.00, 709.00)
         S2 = np.exp(clipped_val)
         #S2*RANDOM(0-to-1)*(LoctionRandomChickenInSwarm-thisChickenLocation)
-        term_2 = S2*self.rng.uniform(0,1)*(random_chicken_loc-self.M[particle])
+
+        # these terms can overflow because of the exp()
+        # some S2 results are evaluating on the scale of 8.218407461554972e+307
+        # these clipped bounds are effectively are zero and inf
+        #term_2 = S2*self.rng.uniform(0,1)*(random_chicken_loc-self.M[particle])
+        # This still causes overflow:
+        # clipped_term2 = np.clip((S2*self.rng.uniform(0,1)*(random_chicken_loc-self.M[particle])), -10e50, 10e10)
+        if S2 > 10e50:
+            S2 = 10e50
+        elif S2 < -10e50:
+            S2 = -10e50
+
+        clipped_term2 = np.clip((S2*self.rng.uniform(0,1)*(random_chicken_loc-self.M[particle])), -10e50, 10e10)
+        term_2 = clipped_term2
 
         # new_loc = old_loc + term_1 + term_2
         self.M[particle] = self.M[particle] + term_1 + term_2
@@ -404,23 +427,21 @@ class swarm:
         group_nums = np.arange(self.RN)
 
         # first rooster, to reset the array
-        self.chicken_info = np.vstack([0, 0, -1])
+        self.chicken_info = np.array([0, 0, -1])
 
         for i in range(1,int(self.number_of_particles)):
             if classList[i] == 0: #rooster
                 # assign to the next group (i-1), and done.
                 # CLASSIFICATION(0-4), GROUP(0-m), MOTHER-CHILD ID
                 self.chicken_info = \
-                    np.hstack([self.chicken_info, 
-                            np.vstack([classList[i], i, -1])])
+                    np.vstack([self.chicken_info, [classList[i], i, -1]])
 
             elif (classList[i] == 1) or (classList[i] == 2): #hen, mother hen
                 # assign to a random group.
                 # CLASSIFICATION(0-4), GROUP(0-m), MOTHER-CHILD ID
                 hen_group = self.rng.choice(group_nums)
                 self.chicken_info = \
-                    np.hstack([self.chicken_info, 
-                            np.vstack([classList[i], hen_group, -1])])
+                    np.vstack([self.chicken_info,[classList[i], hen_group, -1]])
 
             elif classList[i] == 3: #chick
                 # select a random hen to be the 'mother' and assign to group
@@ -433,8 +454,7 @@ class swarm:
                         mother_group = self.chicken_info[chicken_idx][1]         
                         # assign chick to group, and to that mother hen                    
                         self.chicken_info = \
-                            np.hstack([self.chicken_info, 
-                                    np.vstack([classList[i], mother_group, chicken_idx])])
+                            np.vstack([self.chicken_info,[classList[i], mother_group, chicken_idx]])
 
                         groupAssigned = True
 
