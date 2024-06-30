@@ -35,7 +35,7 @@ class swarm:
     # int boundary 1 = random,      2 = reflecting
     #              3 = absorbing,   4 = invisible
     def __init__(self, NO_OF_PARTICLES, 
-                 lbound, ubound, weights,
+                 lbound, ubound,
                  output_size, targets,
                  E_TOL, maxit, boundary, obj_func, constr_func,
                  RN=3, HN=12, MN=8, CN=15, G = 150,
@@ -224,7 +224,6 @@ class swarm:
             self.F_Gb                   : Fitness value corresponding to the global best position.
             self.Pb                     : Personal best position for each particle.
             self.F_Pb                   : Fitness value corresponding to the personal best position for each particle.
-            self.weights                : Weights for the optimization process.
             self.targets                : Target values for the optimization process.
             self.maxit                  : Maximum number of iterations.
             self.E_TOL                  : Error tolerance.
@@ -252,7 +251,6 @@ class swarm:
             self.F_Gb = sys.maxsize*np.ones((1,output_size))                
             self.Pb = sys.maxsize*np.ones(np.shape(self.M))                 
             self.F_Pb = sys.maxsize*np.ones((NO_OF_PARTICLES,output_size))  
-            self.weights = np.array(weights)                     
             self.targets = np.array(targets)                      
             self.maxit = maxit                                             
             self.E_TOL = E_TOL                                              
@@ -321,7 +319,7 @@ class swarm:
 
             # duplicate locals to stick with eqs. in README
             p = self.Pb[particle]             # personal best
-            g = np.hstack(self.Gb)            # global best
+            g = self.Gb                       # global best
 
             # Mean Best Position (for the cat)
             mb = self.beta* p + (1 - self.beta) * g
@@ -339,7 +337,7 @@ class swarm:
 
         # duplicate locals to stick with eqs. in README
         p = self.Pb[particle]             # personal best
-        g = np.hstack(rooster_loc)           # rooster best bc that's the well
+        g = rooster_loc                   # rooster best bc that's the well
 
         # Mean Best Position
         mb = self.beta* p + (1 - self.beta) * g
@@ -358,7 +356,7 @@ class swarm:
 
         # duplicate locals to stick with eqs. in README
         p = self.Pb[particle]             # personal best
-        g = np.hstack(mother_loc)            # mother best bc that's the well
+        g = mother_loc                    # mother best bc that's the well
 
         # Mean Best Position
         mb = self.beta* p + (1 - self.beta) * g
@@ -417,23 +415,21 @@ class swarm:
         group_nums = np.arange(self.RN)
 
         # first rooster, to reset the array
-        self.chicken_info = np.vstack([0, 0, -1])
+        self.chicken_info = [0, 0, -1]
 
         for i in range(1,int(self.number_of_particles)):
             if classList[i] == 0: #rooster
                 # assign to the next group (i-1), and done.
                 # CLASSIFICATION(0-4), GROUP(0-m), MOTHER-CHILD ID
                 self.chicken_info = \
-                    np.hstack([self.chicken_info, 
-                            np.vstack([classList[i], i, -1])])
+                    np.vstack([self.chicken_info,[classList[i], i, -1]])
 
             elif (classList[i] == 1) or (classList[i] == 2): #hen, mother hen
                 # assign to a random group.
                 # CLASSIFICATION(0-4), GROUP(0-m), MOTHER-CHILD ID
                 hen_group = self.rng.choice(group_nums)
                 self.chicken_info = \
-                    np.hstack([self.chicken_info, 
-                            np.vstack([classList[i], hen_group, -1])])
+                    np.vstack([self.chicken_info,[classList[i], hen_group, -1]])
 
             elif classList[i] == 3: #chick
                 # select a random hen to be the 'mother' and assign to group
@@ -446,8 +442,7 @@ class swarm:
                         mother_group = self.chicken_info[chicken_idx][1]         
                         # assign chick to group, and to that mother hen                    
                         self.chicken_info = \
-                            np.hstack([self.chicken_info, 
-                                    np.vstack([classList[i], mother_group, chicken_idx])])
+                            np.vstack([self.chicken_info,[classList[i], mother_group, chicken_idx]])
 
                         groupAssigned = True
 
@@ -477,7 +472,7 @@ class swarm:
         # The first condition checks if constraints are met, 
         # and the second determins if the values are to large (positive or negitive)
         # and may cause a buffer overflow with large exponents (a bug that was found experimentally)
-        update = self.check_bounds(particle) or not self.constr_func(self.M[particle]) or not self.validate_obj_function(np.hstack(self.M[self.current_particle]))
+        update = self.check_bounds(particle) or not self.constr_func(self.M[particle]) or not self.validate_obj_function(self.M[self.current_particle])
         if update > 0:
             while(self.check_bounds(particle)>0) or (self.constr_func(self.M[particle])==False) or (self.validate_obj_function(self.M[particle])==False): 
                 variation = self.ubound-self.lbound
@@ -612,7 +607,6 @@ class swarm:
                         'F_Gb': self.F_Gb,
                         'Pb': self.Pb,
                         'F_Pb': self.F_Pb,
-                        'weights': self.weights,
                         'targets': self.targets,
                         'maxit': self.maxit,
                         'E_TOL': self.E_TOL,
@@ -637,7 +631,6 @@ class swarm:
         self.F_Gb = swarm_export['F_Gb'] 
         self.Pb = swarm_export['Pb'] 
         self.F_Pb = swarm_export['F_Pb'] 
-        self.weights = swarm_export['weights'] 
         self.targets = swarm_export['targets'] 
         self.maxit = swarm_export['maxit'] 
         self.E_TOL = swarm_export['E_TOL'] 
