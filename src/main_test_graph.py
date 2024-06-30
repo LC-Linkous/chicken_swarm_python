@@ -20,7 +20,12 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 from chicken_swarm import swarm
-import configs_F as func_configs
+
+# OBJECTIVE FUNCTION SELECTION
+#import one_dim_x_test.configs_F as func_configs     # single objective, 1D input
+#import himmelblau.configs_F as func_configs         # single objective, 2D input
+import lundquist_3_var.configs_F as func_configs     # multi objective function
+
 
 
 
@@ -29,29 +34,34 @@ class TestGraph():
 
         self.ctr = 0
 
+
+        # swarm variables
+        E_TOL = 10 ** -6                    # Convergence Tolerance
+        MAXIT = 10000                       # Maximum allowed iterations
+        BOUNDARY = 1                        # int boundary 1 = random,      2 = reflecting
+                                            #              3 = absorbing,   4 = invisible
+
+
+
+        # Objective function dependent variables
+        LB = func_configs.LB                    # Lower boundaries, [[0.21, 0, 0.1]]
+        UB = func_configs.UB                    # Upper boundaries, [[1, 1, 0.5]]
+        IN_VARS = func_configs.IN_VARS          # Number of input variables (x-values)   
+        OUT_VARS = func_configs.OUT_VARS        # Number of output variables (y-values)
+        TARGETS = func_configs.TARGETS          # Target values for output
+
         # Objective function dependent variables
         func_F = func_configs.OBJECTIVE_FUNC  # objective function
         constr_F = func_configs.CONSTR_FUNC   # constraint function
-        LB = func_configs.LB              # Lower boundaries, [[0.21, 0, 0.1]]
-        UB = func_configs.UB              # Upper boundaries, [[1, 1, 0.5]]   
-        OUT_VARS = func_configs.OUT_VARS  # Number of output variables (y-values)
-        IN_VARS = func_configs.IN_VARS    # Number of input variables (x-values)
-        TARGETS = func_configs.TARGETS    # Target values for output
 
+        
         # chicken swarm specific
         RN = 10                       # Total number of roosters
         HN = 20                       # Total number of hens
         MN = 15                       # Number of mother hens in total hens
         CN = 20                       # Total number of chicks
         G = 70                        # Reorganize groups every G steps 
-
-        # swarm variables
         NO_OF_PARTICLES = RN + HN + CN      # Number of particles in swarm
-        WEIGHTS = [[2, 2.2, 2]]             # Update vector weights. Used as C1 constant in tracing mode.
-        E_TOL = 10 ** -6                    # Convergence Tolerance
-        MAXIT = 10000                       # Maximum allowed iterations
-        BOUNDARY = 1                        # int boundary 1 = random,      2 = reflecting
-                                            #              3 = absorbing,   4 = invisible
 
         # quantum swarm variables
         BETA = 0.5                  #Float constant controlling influence 
@@ -89,7 +99,7 @@ class TestGraph():
 
 
         self.mySwarm = swarm(NO_OF_PARTICLES, LB, UB,
-                        WEIGHTS, OUT_VARS, TARGETS,
+                        OUT_VARS, TARGETS,
                         E_TOL, MAXIT, BOUNDARY, func_F, constr_F, 
                         RN=RN, HN=HN, MN=MN, CN=CN, G=G,
                         beta=BETA, quantum_roosters= QUANTUM_ROOSTERS,
@@ -130,48 +140,59 @@ class TestGraph():
         pass
          
 
-    def update_plot(self, m_coords, f_coords, targets, showTarget, clearAx=True, setLimts=False):
-        # if self.scatter is None:
+    def update_plot(self, x_coords, y_coords, targets, showTarget=True, clearAx=True):
+        
+        # check if any points. first call might not have anythign set yet.
+        if len(x_coords) < 1:
+            return 
+
+
         if clearAx == True:
             self.ax1.clear() #use this to git rid of the 'ant tunnel' trails
             self.ax2.clear()
-        if setLimts == True:
-            self.ax1.set_xlim(-5, 5)
-            self.ax1.set_ylim(-5, 5)
-            self.ax1.set_zlim(-5, 5)
-            
-            self.ax2.set_xlim(-5, 5)
-            self.ax2.set_ylim(-5, 5)
-            self.ax2.set_zlim(-5, 5)
-        
+
         # MOVEMENT PLOT
-        if np.shape(m_coords)[1] == 2: #2-dim func
-            self.ax1.set_title("Particle Location, Iteration: " + str(self.ctr))
+        if np.shape(x_coords)[1]==1: # 1 dim function
+            x_plot_coords = np.array(x_coords[:,0])*0.0
+            self.ax1.set_title("Search Locations, Iteration: " + str(self.ctr))
+            self.ax1.set_xlabel("$x_1$")
+            self.ax1.set_ylabel("filler coords")
+            self.scatter = self.ax1.scatter(x_coords, x_plot_coords, edgecolors='b')   
+        
+        elif np.shape(x_coords)[1] == 2: #2-dim func
+            self.ax1.set_title("Search Locations, Iteration: " + str(self.ctr))
             self.ax1.set_xlabel("$x_1$")
             self.ax1.set_ylabel("$x_2$")
-            self.scatter = self.ax1.scatter(m_coords[:,0], m_coords[:,1], edgecolors='b')
+            self.scatter = self.ax1.scatter(x_coords[:,0], x_coords[:,1], edgecolors='b')
 
-        elif np.shape(m_coords)[1] == 3: #3-dim func
-            self.ax1.set_title("Particle Location, Iteration: " + str(self.ctr))
+        elif np.shape(x_coords)[1] == 3: #3-dim func
+            self.ax1.set_title("Search Locations, Iteration: " + str(self.ctr))
             self.ax1.set_xlabel("$x_1$")
             self.ax1.set_ylabel("$x_2$")
             self.ax1.set_zlabel("$x_3$")
-            self.scatter = self.ax1.scatter(m_coords[:,0], m_coords[:,1], m_coords[:,2], edgecolors='b')
+            self.scatter = self.ax1.scatter(x_coords[:,0], x_coords[:,1], x_coords[:,2], edgecolors='b')
 
 
         # FITNESS PLOT
-        if np.shape(f_coords)[1] == 2: #2-dim obj func
+        if np.shape(y_coords)[1] == 1: #1-dim obj func
+            y_plot_filler = np.array(y_coords[:,0])*0.0
+            self.ax2.set_title("Global Best Fitness Relation to Target")
+            self.ax2.set_xlabel("$F_{1}(x,y)$")
+            self.ax2.set_ylabel("filler coords")
+            self.scatter = self.ax2.scatter(y_coords, y_plot_filler,  marker='o', s=40, facecolor="none", edgecolors="k")
+
+        elif np.shape(y_coords)[1] == 2: #2-dim obj func
             self.ax2.set_title("Global Best Fitness Relation to Target")
             self.ax2.set_xlabel("$F_{1}(x,y)$")
             self.ax2.set_ylabel("$F_{2}(x,y)$")
-            self.scatter = self.ax2.scatter(f_coords[:,0], f_coords[:,1], marker='o', s=40, facecolor="none", edgecolors="k")
+            self.scatter = self.ax2.scatter(y_coords[:,0], y_coords[:,1], marker='o', s=40, facecolor="none", edgecolors="k")
 
-        elif np.shape(f_coords)[1] == 3: #3-dim obj fun
+        elif np.shape(y_coords)[1] == 3: #3-dim obj fun
             self.ax2.set_title("Global Best Fitness Relation to Target")
             self.ax2.set_xlabel("$F_{1}(x,y)$")
             self.ax2.set_ylabel("$F_{2}(x,y)$")
             self.ax2.set_zlabel("$F_{3}(x,y)$")
-            self.scatter = self.ax2.scatter(f_coords[:,0], f_coords[:,1], f_coords[:,2], marker='o', s=40, facecolor="none", edgecolors="k")
+            self.scatter = self.ax2.scatter(y_coords[:,0], y_coords[:,1], y_coords[:,2], marker='o', s=40, facecolor="none", edgecolors="k")
 
 
         if showTarget == True: # plot the target point
@@ -185,10 +206,9 @@ class TestGraph():
 
         plt.pause(0.0001)  # Pause to update the plot
         if self.ctr == 0:
-            time.sleep(3)
+            time.sleep(2)
             
         self.ctr = self.ctr + 1
-
 
     def run(self):
         time.sleep(2)
