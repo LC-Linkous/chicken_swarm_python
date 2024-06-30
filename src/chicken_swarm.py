@@ -31,7 +31,7 @@ class swarm:
     # int boundary 1 = random,      2 = reflecting
     #              3 = absorbing,   4 = invisible
     def __init__(self, NO_OF_PARTICLES, 
-                 lbound, ubound, weights,
+                 lbound, ubound,
                  output_size, targets,
                  E_TOL, maxit, boundary, obj_func, constr_func,
                  RN=3, HN=12, MN=8, CN=15, G = 150,
@@ -211,7 +211,6 @@ class swarm:
             self.F_Gb                   : Fitness value corresponding to the global best position.
             self.Pb                     : Personal best position for each particle.
             self.F_Pb                   : Fitness value corresponding to the personal best position for each particle.
-            self.weights                : Weights for the optimization process.
             self.targets                : Target values for the optimization process.
             self.maxit                  : Maximum number of iterations.
             self.E_TOL                  : Error tolerance.
@@ -235,7 +234,6 @@ class swarm:
             self.F_Gb = sys.maxsize*np.ones((1,output_size))                
             self.Pb = sys.maxsize*np.ones(np.shape(self.M))                 
             self.F_Pb = sys.maxsize*np.ones((NO_OF_PARTICLES,output_size))  
-            self.weights = np.array(weights)                     
             self.targets = np.array(targets)                   
             self.maxit = maxit                                             
             self.E_TOL = E_TOL                                              
@@ -621,7 +619,6 @@ class swarm:
                         'F_Gb': self.F_Gb,
                         'Pb': self.Pb,
                         'F_Pb': self.F_Pb,
-                        'weights': self.weights,
                         'targets': self.targets,
                         'maxit': self.maxit,
                         'E_TOL': self.E_TOL,
@@ -647,7 +644,6 @@ class swarm:
         self.F_Gb = swarm_export['F_Gb'] 
         self.Pb = swarm_export['Pb'] 
         self.F_Pb = swarm_export['F_Pb'] 
-        self.weights = swarm_export['weights'] 
         self.targets = swarm_export['targets'] 
         self.maxit = swarm_export['maxit'] 
         self.E_TOL = swarm_export['E_TOL'] 

@@ -27,7 +27,6 @@ import himmelblau.configs_F as func_configs         # single objective, 2D input
 class TestDetails():
     def __init__(self):
         # swarm variables
-        WEIGHTS = [[2, 2.2, 2]]             # Update vector weights. Used as C1 constant in tracing mode.
         E_TOL = 10 ** -6                    # Convergence Tolerance
         MAXIT = 10000                       # Maximum allowed iterations
         BOUNDARY = 1                        # int boundary 1 = random,      2 = reflecting
@@ -85,7 +84,7 @@ class TestDetails():
 
 
         self.mySwarm = swarm(NO_OF_PARTICLES, LB, UB,
-                        WEIGHTS, OUT_VARS, TARGETS,
+                        OUT_VARS, TARGETS,
                         E_TOL, MAXIT, BOUNDARY, func_F, constr_F,
                         RN=RN, HN=HN, MN=MN, CN=CN, G=G,
                         parent=parent, detailedWarnings=detailedWarnings)
