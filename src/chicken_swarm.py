@@ -90,12 +90,12 @@ class swarm:
             self.G = G      # num steps to update chicken status
  
             # error checking on population split
-            total_chickens = RN + HN + CN
+            total_chickens = RN + HN + MN + CN
             if (NO_OF_PARTICLES < total_chickens):
                 self.parent.debug_message_printout("WARNING: number of chickens adds up to more \
                                                    than the expected number of particles. Attempting fix.")
                 # subtract number of roosters and chicks. rest are hens
-                num_hens = NO_OF_PARTICLES - RN - CN
+                num_hens = NO_OF_PARTICLES - RN - CN - MN
                 if (num_hens <=0):
                     self.parent.debug_message_printout("ERROR: total of roosters and chicks is higher than \
                                                        the expected swarm size. Swarm init failed.")
@@ -117,12 +117,7 @@ class swarm:
                 self.parent.debug_message_printout("ERROR: there are chicks, but no mother hens.\
                 Check categories for chickens.")
                 return
-            elif (MN>HN):
-                self.parent.debug_message_printout("ERROR: there are more mother hens than total hens.\
-                Check categories for chickens.")
-                return
-
-
+   
             #split chickens into groups           
             # Each group has a rooster (chicken with best fitness value)
             # The worst preforming agents are chicks.
@@ -149,14 +144,14 @@ class swarm:
                 classList[0:RN] = 0
                 # hen
                 start = RN
-                end = RN + (HN-MN)
+                end = RN + HN
                 classList[start:end] = 1
                 # mother hen
-                start = RN + (HN-MN)
-                end = RN + HN
+                start = RN + HN
+                end = RN + HN + MN
                 classList[start:end] = 2
                 # chicks
-                start = RN + HN
+                start = RN + HN + MN
                 classList[start:] = 3
                 # array of groups to use in random allocation
                 group_nums = np.arange(RN)
@@ -412,14 +407,14 @@ class swarm:
         classList[0:self.RN] = 0
         # hen
         start = self.RN
-        end = self.RN + (self.HN-self.MN)
+        end = self.RN + self.HN
         classList[start:end] = 1
         # mother hen
-        start = self.RN + (self.HN-self.MN)
-        end = self.RN + self.HN
+        start = self.RN + self.HN
+        end = self.RN + self.HN + self.MN
         classList[start:end] = 2
         # chicks
-        start = self.RN + self.HN
+        start = self.RN + self.HN + self.MN
         classList[start:] = 3
         # array of groups to use in random allocation
         group_nums = np.arange(self.RN)

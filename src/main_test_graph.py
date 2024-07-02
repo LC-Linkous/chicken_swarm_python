@@ -60,7 +60,7 @@ class TestGraph():
         MN = 15                       # Number of mother hens in total hens
         CN = 20                       # Total number of chicks
         G = 70                        # Reorganize groups every G steps 
-        NO_OF_PARTICLES = RN + HN + CN      # Number of particles in swarm
+        NO_OF_PARTICLES = RN + HN + MN + CN      # Number of particles in swarm
 
         # swarm setup
         parent = self                 # Optional parent class for swarm 
