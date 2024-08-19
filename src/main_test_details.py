@@ -9,8 +9,8 @@
 #       error messages directly from the 'swarm' class. Format updates are 
 #       for integration in the AntennaCAT GUI.
 #
-#   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: June 14, 2024
+#   Author(s): Lauren Linkous
+#   Last update: August 18, 2024
 ##--------------------------------------------------------------------\
 
 
@@ -34,7 +34,6 @@ class TestDetails():
         MAXIT = 10000                       # Maximum allowed iterations
         BOUNDARY = 1                        # int boundary 1 = random,      2 = reflecting
                                             #              3 = absorbing,   4 = invisible
-
 
 
         # Objective function dependent variables
@@ -62,17 +61,6 @@ class TestDetails():
                                         #between the personal and global best positions
         QUANTUM_ROOSTERS = True     # Boolean. Use quantum rooster or classical movement
 
-
-
-        # swarm setup
-        parent = self                 # Optional parent class for swarm 
-                                        # (Used for passing debug messages or
-                                        # other information that will appear 
-                                        # in GUI panels)
-
-        detailedWarnings = False      # Optional boolean for detailed feedback
-
-
         # Swarm vars
         self.best_eval = 1            # Starting eval value
 
@@ -97,7 +85,6 @@ class TestDetails():
                         E_TOL, MAXIT, BOUNDARY, func_F, constr_F,
                         RN=RN, HN=HN, MN=MN, CN=CN, G=G,
                         beta=BETA, quantum_roosters= QUANTUM_ROOSTERS,
-                        input_size=IN_VARS,
                         parent=parent, detailedWarnings=detailedWarnings)
 
 
@@ -110,11 +97,6 @@ class TestDetails():
         print(msg)
 
 
-    def record_params(self):
-        # this function is called from particle_swarm.py to trigger a write to a log file
-        # running in the AntennaCAT GUI to record the parameter iteration that caused an error
-        pass
-         
 
     def run(self):
 

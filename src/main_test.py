@@ -9,8 +9,8 @@
 #       error messages directly from the 'swarm' class. Format updates are 
 #       for integration in the AntennaCAT GUI.
 #
-#   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: June 14, 2024
+#   Author(s): Lauren Linkous
+#   Last update: August 18, 2024
 ##--------------------------------------------------------------------\
 
 
@@ -73,8 +73,7 @@ if __name__ == "__main__":
                     OUT_VARS, TARGETS,
                     E_TOL, MAXIT, BOUNDARY, func_F, constr_F,
                     RN=RN, HN=HN, MN=MN, CN=CN, G=G,
-                    beta=BETA, quantum_roosters= QUANTUM_ROOSTERS,
-                    input_size=IN_VARS)  
+                    beta=BETA, quantum_roosters= QUANTUM_ROOSTERS)  
     
 
     # instantiation of particle swarm optimizer 
