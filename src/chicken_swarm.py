@@ -3,37 +3,33 @@
 ##--------------------------------------------------------------------\
 #   chicken_swarm_python
 #   './chicken_swarm_python/src/chicken_swarm.py'
-#   A basic chicken swarm optimization class. This class follows the same 
-#       format as pso_python and pso_basic to make them interchangeable
-#       in function calls. 
-#       
+#   A basic chicken swarm optimization class. 
 #
 #   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: June 14, 2024
+#   Last update: August 18, 2024
 ##--------------------------------------------------------------------\
 
 
 import numpy as np
 from numpy.random import Generator, MT19937
 import sys
-import time
 np.seterr(all='raise')
 
 
 class swarm:
     # arguments should take form: 
-    # swarm(int, 
-    # [[float, float, ...]], [[float, float, ...]], [[float, ...]], 
+    # swarm(int, [[float, float, ...]], [[float, float, ...]], 
     # int, [[float, ...]], 
-    # float, int, int, func, func,
+    # float, int, int, 
+    # func, func,
     # int, int, int, int, int,
-    # obj, bool) 
+    # class obj, bool) 
     # int boundary 1 = random,      2 = reflecting
     #              3 = absorbing,   4 = invisible
-    def __init__(self, NO_OF_PARTICLES, 
-                 lbound, ubound,
+    def __init__(self, NO_OF_PARTICLES, lbound, ubound,
                  output_size, targets,
-                 E_TOL, maxit, boundary, obj_func, constr_func,
+                 E_TOL, maxit, boundary, 
+                 obj_func, constr_func,
                  RN=3, HN=12, MN=8, CN=15, G = 150,
                  parent=None, detailedWarnings=False):  
 
@@ -219,8 +215,6 @@ class swarm:
             self.Flist                  : List to store fitness values.
             self.Fvals                  : List to store fitness values.
             self.Mlast                  : Last location of particle
-            self.InitDeviation          : Initial deviation of particles.
-            self.delta_t                : static time modulation. retained for comparison to original repo. and swarm export
             '''
 
             self.output_size = output_size
@@ -242,7 +236,6 @@ class swarm:
             self.Flist = []                                                 
             self.Fvals = []                                                 
             self.Mlast = 1*self.ubound                                      
-            self.InitDeviation = self.absolute_mean_deviation_of_particles()
                                          
 
             self.error_message_generator("swarm successfully initialized")
@@ -462,25 +455,14 @@ class swarm:
         return update
 
 
-    def validate_obj_function(self, particle):
-        # checks the the objective function resolves with the current particle.
-        # It is possible (and likely) that obj funcs without proper error handling
-        # will throw over/underflow errors.
-        # e.g.: numpy does not support float128()
-        newFVals, noError = self.obj_func(particle, self.output_size)
-        if noError == False:
-            #print("!!!!")
-            pass
-        return noError
-
     def random_bound(self, particle):
         # If particle is out of bounds, bring the particle back in bounds
         # The first condition checks if constraints are met, 
         # and the second determins if the values are to large (positive or negitive)
         # and may cause a buffer overflow with large exponents (a bug that was found experimentally)
-        update = self.check_bounds(particle) or not self.constr_func(self.M[particle]) or not self.validate_obj_function(np.hstack(self.M[self.current_particle]))
+        update = self.check_bounds(particle) or not self.constr_func(self.M[particle])
         if update > 0:
-            while(self.check_bounds(particle)>0) or (self.constr_func(self.M[particle])==False) or (self.validate_obj_function(self.M[particle])==False): 
+            while(self.check_bounds(particle)>0) or (self.constr_func(self.M[particle])==False): 
                 variation = self.ubound-self.lbound
                 self.M[particle] = \
                     np.squeeze(self.rng.random() * 
@@ -507,7 +489,7 @@ class swarm:
             self.random_bound(particle)
 
     def invisible_bound(self, particle):
-        update = self.check_bounds(particle) or not self.constr_func(self.M[particle]) or not self.validate_obj_function(self.M[particle])
+        update = self.check_bounds(particle) or not self.constr_func(self.M[particle])
         if update > 0:
             self.Active[particle] = 0  
         else:
@@ -618,7 +600,6 @@ class swarm:
                         'maxit': self.maxit,
                         'E_TOL': self.E_TOL,
                         'iter': self.iter,
-                        'delta_t': self.delta_t,
                         'current_particle': self.current_particle,
                         'number_of_particles': self.number_of_particles,
                         'allow_update': self.allow_update,

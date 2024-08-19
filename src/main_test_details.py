@@ -10,7 +10,7 @@
 #       for integration in the AntennaCAT GUI.
 #
 #   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: June 14, 2024
+#   Last update: August 18, 2024
 ##--------------------------------------------------------------------\
 
 
@@ -55,15 +55,6 @@ class TestDetails():
         G = 70                        # Reorganize groups every G steps 
         NO_OF_PARTICLES = RN + HN + MN + CN       # Number of particles in swarm
 
-        # swarm setup
-        parent = self                 # Optional parent class for swarm 
-                                        # (Used for passing debug messages or
-                                        # other information that will appear 
-                                        # in GUI panels)
-
-        detailedWarnings = False      # Optional boolean for detailed feedback
-
-
         # Swarm vars
         self.best_eval = 1            # Starting eval value
 
@@ -98,12 +89,6 @@ class TestDetails():
         msg = "[" + str(curTime) +"] " + str(txt)
         print(msg)
 
-
-    def record_params(self):
-        # this function is called from particle_swarm.py to trigger a write to a log file
-        # running in the AntennaCAT GUI to record the parameter iteration that caused an error
-        pass
-         
 
     def run(self):
 

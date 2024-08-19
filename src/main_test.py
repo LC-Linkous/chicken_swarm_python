@@ -10,7 +10,7 @@
 #       for integration in the AntennaCAT GUI.
 #
 #   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: June 14, 2024
+#   Last update: August 18, 2024
 ##--------------------------------------------------------------------\
 
 
@@ -31,7 +31,6 @@ if __name__ == "__main__":
                                         #              3 = absorbing,   4 = invisible
 
 
-
     # Objective function dependent variables
     LB = func_configs.LB                    # Lower boundaries, [[0.21, 0, 0.1]]
     UB = func_configs.UB                    # Upper boundaries, [[1, 1, 0.5]]
@@ -43,8 +42,7 @@ if __name__ == "__main__":
     func_F = func_configs.OBJECTIVE_FUNC  # objective function
     constr_F = func_configs.CONSTR_FUNC   # constraint function
 
-    
-    
+        
     # chicken swarm specific
     RN = 10                       # Total number of roosters
     HN = 20                       # Total number of hens
@@ -80,11 +78,6 @@ if __name__ == "__main__":
         # call the objective function, control 
         # when it is allowed to update and return 
         # control to optimizer
-
-        # for some objective functions, the function
-        # might not evaluate correctly (e.g., under/overflow)
-        # so when that happens, the function is not evaluated
-        # and the 'step' fucntion will re-gen values and try again
 
         mySwarm.call_objective(allow_update)
         iter, eval = mySwarm.get_convergence_data()
