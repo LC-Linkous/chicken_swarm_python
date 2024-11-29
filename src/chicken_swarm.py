@@ -5,39 +5,43 @@
 #   './chicken_swarm_quantum/src/chicken_swarm.py'
 #   A quantum-inspired chicken swarm optimization class. This class follows the same 
 #
-#   This approach mimics a general and very simple probablistic approach.
+#   This approach mimics a general and very simple probabilistic approach.
 #       It is not meant to directly mimic qiskit or other libraries.
 #       This is a snapshot of some of the most basic behavior found in
-#       literature.       
+#       literature.     
 #
 #   Author(s): Lauren Linkous
-#   Last update: August 18, 2024
+#   Last update: November 28, 2024
 ##--------------------------------------------------------------------\
+#! /usr/bin/python3
 
 
 import numpy as np
 from numpy.random import Generator, MT19937
 import sys
+import time
 np.seterr(all='raise')
 
 
 class swarm:
     # arguments should take form: 
-    # swarm(int, [[float, float, ...]], [[float, float, ...]], 
-    #  int, [[float, ...]],
-    #  float, int, int,
-    #  func, func,
-    #  int, int, int, int, int, 
-    #  float, bool,
-    #  class obj, bool)
+    # swarm(int, 
+    # [[float, float, ...]], [[float, float, ...]], [[float, ...]], 
+    # int, [[float, ...]], 
+    # float, int, int, func, func,
+    # int, int, int, int, int,
+    # obj, bool) 
     # int boundary 1 = random,      2 = reflecting
     #              3 = absorbing,   4 = invisible
-    def __init__(self, NO_OF_PARTICLES, lbound, ubound,
+    def __init__(self, NO_OF_PARTICLES, 
+                 lbound, ubound,
                  output_size, targets,
-                 E_TOL, maxit, boundary, obj_func, constr_func,
-                 RN=3, HN=12, MN=8, CN=15, G = 150,
-                 beta=0.5, quantum_roosters = False,
-                 parent=None, detailedWarnings=False):  
+                 E_TOL, maxit, boundary, 
+                 obj_func, constr_func,
+                 RN=3, HN=12, MN=8, CN=15, G=150,
+                 beta=0.5, quantum_roosters=False,
+                 parent=None, detailedWarnings=False,
+                 runningWithSim=True):  
 
         
         # Optional parent class func call to write out values that trigger constraint issues
@@ -45,6 +49,9 @@ class swarm:
         # Additional output for advanced debugging to TERMINAL. 
         # Some of these messages will be returned via debugTigger
         self.detailedWarnings = detailedWarnings 
+
+        # AntennaCAT vars
+        self.runningWithSim=runningWithSim
 
 
         heightl = np.shape(lbound)[0]
@@ -228,6 +235,8 @@ class swarm:
             self.Flist                  : List to store fitness values.
             self.Fvals                  : List to store fitness values.
             self.Mlast                  : Last location of particle
+            self.InitDeviation          : Initial deviation of particles.
+            self.delta_t                : static time modulation. retained for comparison to original repo. and swarm export
             '''
 
 
@@ -240,7 +249,7 @@ class swarm:
             self.F_Gb = sys.maxsize*np.ones((1,output_size))                
             self.Pb = sys.maxsize*np.ones(np.shape(self.M))                 
             self.F_Pb = sys.maxsize*np.ones((NO_OF_PARTICLES,output_size))  
-            self.targets = np.array(targets)                      
+            self.targets = np.array(targets).reshape(-1, 1)                      
             self.maxit = maxit                                             
             self.E_TOL = E_TOL                                              
             self.obj_func = obj_func                                             
@@ -253,6 +262,8 @@ class swarm:
             self.Flist = []                                                 
             self.Fvals = []                                                 
             self.Mlast = 1*self.ubound                                      
+            self.InitDeviation = self.absolute_mean_deviation_of_particles()
+                                         
 
             self.error_message_generator("swarm successfully initialized")
 
@@ -261,7 +272,7 @@ class swarm:
             # call the objective function. If there's an issue with the function execution, 'noError' returns False
             newFVals, noError = self.obj_func(self.M[self.current_particle], self.output_size)
             if noError == True:
-                self.Fvals = newFVals
+                self.Fvals = np.array(newFVals).reshape(-1, 1)
                 if allow_update:
                     self.Flist = abs(self.targets - self.Fvals)
                     self.iter = self.iter + 1
@@ -271,7 +282,6 @@ class swarm:
             return noError# return is for error reporting purposes only
    
     # MOVEMENT MODELS
-
     def move_rooster(self, particle):
         # roosters in this class can exhibit classical or quantum behavior based on a user-set bool
 
@@ -586,6 +596,7 @@ class swarm:
                         'maxit': self.maxit,
                         'E_TOL': self.E_TOL,
                         'iter': self.iter,
+                        'delta_t': self.delta_t,
                         'current_particle': self.current_particle,
                         'number_of_particles': self.number_of_particles,
                         'allow_update': self.allow_update,
@@ -647,4 +658,4 @@ class swarm:
         if self.parent == None:
             print(msg)
         else:
-            self.parent.debug_message_printout(msg)
+            self.parent.updateStatusText(msg)

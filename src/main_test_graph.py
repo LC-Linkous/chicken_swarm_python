@@ -70,7 +70,7 @@ class TestGraph():
         # Swarm vars
         self.best_eval = 1            # Starting eval value
 
-        parent = self                 # Optional parent class for swarm 
+        parent = self                   # Optional parent class for swarm 
                                         # (Used for passing debug messages or
                                         # other information that will appear 
                                         # in GUI panels)
@@ -112,7 +112,7 @@ class TestGraph():
         self.ax2.set_zlabel('x_3')
         self.scatter2 = None
 
-    def debug_message_printout(self, txt):
+    def updateStatusText(self, txt):
         if txt is None:
             return
         # sets the string as it gets it

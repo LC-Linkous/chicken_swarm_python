@@ -64,7 +64,7 @@ class TestDetails():
         # Swarm vars
         self.best_eval = 1            # Starting eval value
 
-        parent = self                 # Optional parent class for swarm 
+        parent = None                 # Optional parent class for swarm 
                                         # (Used for passing debug messages or
                                         # other information that will appear 
                                         # in GUI panels)
@@ -85,10 +85,10 @@ class TestDetails():
                         E_TOL, MAXIT, BOUNDARY, func_F, constr_F,
                         RN=RN, HN=HN, MN=MN, CN=CN, G=G,
                         beta=BETA, quantum_roosters= QUANTUM_ROOSTERS,
-                        parent=parent, detailedWarnings=detailedWarnings)
+                        parent=None, detailedWarnings=detailedWarnings)
 
 
-    def debug_message_printout(self, txt):
+    def updateStatusText(self, txt):
         if txt is None:
             return
         # sets the string as it gets it
