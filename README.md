@@ -1,12 +1,18 @@
-# chicken_swarm_python
+# improved_chicken_swarm_python
 
-Basic chicken swarm optimizer written in Python.  Modified from the [adaptive timestep PSO optimizer](https://github.com/jonathan46000/pso_python) by [jonathan46000](https://github.com/jonathan46000) to keep a consistent format across optimizers in AntennaCAT.
+# CODE UPDATE IN PROGRESS 12/26/2024
+
+Improved chicken swarm optimizer written in Python. Branch modified from [chicken swarm python](https://github.com/LC-Linkous/chicken_swarm_python) (main repo branch).
+
+
+Base structure modified from the [adaptive timestep PSO optimizer](https://github.com/jonathan46000/pso_python) by [jonathan46000](https://github.com/jonathan46000) to keep a consistent format across optimizers in AntennaCAT.
 
 
 Now featuring AntennaCAT hooks for GUI integration and user input handling.
  
 ## Table of Contents
 * [Chicken Swarm Optimization](#chicken-swarm-optimization)
+* [Improved Chicken Swarm Optimization](#improved-chicken-swarm-optimization)
 * [Requirements](#requirements)
 * [Implementation](#implementation)
     * [Constraint Handling](#constraint-handling)
@@ -39,6 +45,13 @@ In CSO, there is an absence of a direct random velocity component, which is an i
 3) Chicks:
 
     Chicks follow their mother hens. They update their positions based on their mother's positions with some random factor to simulate the dependent behavior.
+
+
+## Improved Chicken Swarm Optimization
+
+Improved Chicken Swarm [2]
+
+
 
 ## Requirements
 
@@ -167,6 +180,8 @@ NOTE: if you close the graph as the code is running, the code will continue to r
 ## References
 
 [1] X. B. Meng, Y. Liu, X. Gao, and H. Zhang, "A new bio-inspired algorithm: Chicken swarm optimization," in Proc. Int. Conf. Swarm Intell. Cham, Switzerland, Springer, 2014, pp. 86–94.
+
+[2] D. Wu, F. Kong, W. Gao, Y. Shen and Z. Ji, "Improved chicken swarm optimization," 2015 IEEE International Conference on Cyber Technology in Automation, Control, and Intelligent Systems (CYBER), Shenyang, China, 2015, pp. 681-686, doi: 10.1109/CYBER.2015.7288023. 
 
 ## Publications and Integration
 This software works as a stand-alone implementation, and as one of the optimizers integrated into AntennaCAT.
