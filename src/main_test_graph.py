@@ -59,6 +59,12 @@ class TestGraph():
         G = 70                        # Reorganize groups every G steps 
         NO_OF_PARTICLES = RN + HN + MN + CN      # Number of particles in swarm
 
+        #improved chicken swarm specific 
+        MIN_WEIGHT = 0.4
+        MAX_WEIGHT = 0.9
+        LEARNING_CONSTANT = 0.4
+
+
         # Swarm vars
         self.best_eval = 1            # Starting eval value
 
@@ -81,6 +87,7 @@ class TestGraph():
                         OUT_VARS, TARGETS,
                         E_TOL, MAXIT, BOUNDARY, func_F, constr_F, 
                         RN=RN, HN=HN, MN=MN, CN=CN, G=G,
+                        W_min=MIN_WEIGHT, W_max=MAX_WEIGHT, C=LEARNING_CONSTANT,
                         parent=parent, detailedWarnings=detailedWarnings)  
 
 

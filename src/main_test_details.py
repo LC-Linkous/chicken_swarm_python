@@ -14,14 +14,13 @@
 ##--------------------------------------------------------------------\
 
 
-import numpy as np
 import time
 from chicken_swarm import swarm
 
 # OBJECTIVE FUNCTION SELECTION
 #import one_dim_x_test.configs_F as func_configs     # single objective, 1D input
-import himmelblau.configs_F as func_configs         # single objective, 2D input
-#import lundquist_3_var.configs_F as func_configs     # multi objective function
+#import himmelblau.configs_F as func_configs         # single objective, 2D input
+import lundquist_3_var.configs_F as func_configs     # multi objective function
 
 
 class TestDetails():
@@ -52,8 +51,16 @@ class TestDetails():
         HN = 20                       # Total number of hens
         MN = 15                       # Number of mother hens in total hens
         CN = 20                       # Total number of chicks
-        G = 70                        # Reorganize groups every G steps 
+        G = 10                        # Reorganize groups every G steps 
         NO_OF_PARTICLES = RN + HN + MN + CN       # Number of particles in swarm
+
+        #improved chicken swarm specific 
+        
+        MIN_WEIGHT = 0.4
+        MAX_WEIGHT = 0.9
+        LEARNING_CONSTANT = 0.4
+
+
 
         # Swarm vars
         self.best_eval = 1            # Starting eval value
@@ -72,12 +79,11 @@ class TestDetails():
         self.allow_update = True      # Allow objective call to update state 
 
 
-
-
         self.mySwarm = swarm(NO_OF_PARTICLES, LB, UB,
                         OUT_VARS, TARGETS,
                         E_TOL, MAXIT, BOUNDARY, func_F, constr_F,
                         RN=RN, HN=HN, MN=MN, CN=CN, G=G,
+                        W_min=MIN_WEIGHT, W_max=MAX_WEIGHT, C=LEARNING_CONSTANT,
                         parent=parent, detailedWarnings=detailedWarnings)
 
 
@@ -106,7 +112,7 @@ class TestDetails():
             if (eval < self.best_eval) and (eval != 0):
                 self.best_eval = eval
             if self.suppress_output:
-                if iter%100 ==0: #print out every 100th iteration update
+                if iter%200 ==0: #print out every 100th iteration update
                     print("Iteration")
                     print(iter)
                     print("Best Eval")

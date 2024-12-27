@@ -23,6 +23,7 @@ class swarm:
     # float, int, int, 
     # func, func,
     # int, int, int, int, int,
+    # float, float,
     # class obj, bool) 
     # int boundary 1 = random,      2 = reflecting
     #              3 = absorbing,   4 = invisible
@@ -31,6 +32,7 @@ class swarm:
                  E_TOL, maxit, boundary, 
                  obj_func, constr_func,
                  RN=3, HN=12, MN=8, CN=15, G = 150,
+                 W_min=0.4, W_max=0.9, C=0.4,
                  parent=None, detailedWarnings=False):  
 
         
@@ -82,11 +84,12 @@ class swarm:
             self.HN = HN    # hen number
             self.MN = MN    # mother hen number
             self.CN = CN    # chick number
-            
-            self.G = G      # num steps to update chicken status
+            total_chickens = RN + HN + MN + CN
+
+            self.G = G                       # num full cycles before updating the 
+            self.G_steps = G*total_chickens  # how many iterations happen in a generation
  
             # error checking on population split
-            total_chickens = RN + HN + MN + CN
             if (NO_OF_PARTICLES < total_chickens):
                 self.parent.debug_message_printout("WARNING: number of chickens adds up to more \
                                                    than the expected number of particles. Attempting fix.")
@@ -163,7 +166,7 @@ class swarm:
                     # assign to the next group (i-1), and done.
                     self.chicken_info = \
                         np.vstack([self.chicken_info, 
-                                [classList[i-1], i-1, -1]])
+                                [classList[i-1], i-1, -1]])  #[ChickenTypeID, groupNumber, childNumTag]
 
                 elif (classList[i-1] == 1) or (classList[i-1] == 2): #hen, mother hen
                     # assign to a random group.
@@ -195,7 +198,7 @@ class swarm:
             self.MN                     : Number of mother hens. Integer.
             self.CN                     : Number of chicks. Integer.  
             self.chicken_info           : classification (R,H,C), group #, mother ID. Array.          
-            self.G                      : How often to randomize groups. Integer.
+            self.G                      : How often to randomize groups. Integer. Num full cycles of chickens
             self.output_size            : An integer value for the output size of obj func
             self.Active                 : An array indicating the activity status of each particle. (e.g., in bounds)
             self.Gb                     : Global best position, initialized with a large value.
@@ -215,6 +218,10 @@ class swarm:
             self.Flist                  : List to store fitness values.
             self.Fvals                  : List to store fitness values.
             self.Mlast                  : Last location of particle
+            self.W_max                  : Constant float. maximum, starting weight
+            self.W_min                  : Constant float. minimum weight.
+            self.W                      : (inertia) Weight of current particle
+            self.C                      : Learning factor. Weight of rooster location for current particle sub-group
             '''
 
             self.output_size = output_size
@@ -235,7 +242,11 @@ class swarm:
             self.boundary = boundary                                       
             self.Flist = []                                                 
             self.Fvals = []                                                 
-            self.Mlast = 1*self.ubound                                      
+            self.Mlast = 1*self.ubound            
+            self.W_max = W_max
+            self.W_min = W_min              
+            self.W = W_max  # exponentially decreases to W_min
+            self.C = C            
                                          
 
             self.error_message_generator("swarm successfully initialized")
@@ -316,7 +327,7 @@ class swarm:
 
         # exp((FitnessThisChicken-FitnessRoosterGroupmate)/(abs(FitnessThisChicken)+epsilon))
         #S1 = np.exp((fitness_this_chicken-fitness_rooster)/(np.abs(fitness_this_chicken) + epsilon))
-        clipped_val = np.clip(((fitness_this_chicken-fitness_rooster)/(np.abs(fitness_this_chicken) + epsilon)), -709.00, 709.00)
+        clipped_val = np.clip(((fitness_this_chicken-fitness_rooster)/(np.abs(fitness_this_chicken) + epsilon)), -700.00, 700.00)
         S1 = np.exp(clipped_val)
         # S1*RANDOM(0-to-1)*(LocationRoosterGroupmate-thisChickenLocation)
         # these terms can overflow because of the exp()
@@ -356,13 +367,23 @@ class swarm:
 
 
     def move_chick(self, particle):
-        #nextLoc = currentLoc + FL*(locationMother - currentLoc)
+
+
+        # classic chicken swarm:
+        # nextLoc = currentLoc + FL*(locationMother - currentLoc)
+        # improved chicken swarm:
+        # nextLoc = weight*currentLoc + FL*(locationMother - currentLoc) + C(locationRooster- currentLoc)
         # NOTE: FL is a value 0 or 2 that determines if a chick follows the mother
         #  The chick RANDOMLY chooses between 0 or 2
 
-        mother_idx = int(self.chicken_info[particle][2]) # the the idx of the mother chicken
+        mother_idx = int(self.chicken_info[particle][2]) # the idx of the mother chicken
         mother_loc = self.M[mother_idx]
-        self.M[particle] = self.M[particle] + self.rng.choice([0,2])*(mother_loc-self.M[particle])
+        rooster_idx = int(self.chicken_info[particle][1]) # the group number of the mother chicken
+        rooster_loc = self.M[rooster_idx] #roosters are always the first RN number of entries to the chicken_info array
+
+        self.M[particle] = self.W*self.M[particle] + self.rng.choice([0,2])*(mother_loc-self.M[particle]) + self.C*(rooster_loc-self.M[particle])
+
+
 
     def reorganize_swarm(self):
         # rank the chickens' fitness vals and establish hierarchial order
@@ -415,7 +436,7 @@ class swarm:
         # first rooster, to reset the array
         self.chicken_info = np.array([0, 0, -1])
 
-        for i in range(1,int(self.number_of_particles)):
+        for i in range(1,int(self.number_of_particles)): #start with the 2nd rooster/chicken
             if classList[i] == 0: #rooster
                 # assign to the next group (i-1), and done.
                 # CLASSIFICATION(0-4), GROUP(0-m), MOTHER-CHILD ID
@@ -551,9 +572,22 @@ class swarm:
                 # save global best
                 self.check_global_local(self.Flist,self.current_particle)
 
-                # every self.G iterations, reorganize the swarm
-                if self.iter%self.G == 0:
+                # every self.G full cycle iterations:
+                #           reorganize the swarm
+                #           update the weight
+                if self.iter%self.G_steps == 0:
                     self.reorganize_swarm()
+                    #update weight
+                    # unique to improved chicken swarm
+                    # newW = w_min*(w_max/w_min)^(1/ (1+10*t/Ngen))
+                    # t = the current number of iterations
+                    # nGen = the maximum number of iterations. 
+                    # However, it needs to be noted that Ngen is 
+
+                    w_scale = self.W_max/self.W_min
+                    exp_den = 1 + 10*self.iter/self.G_steps
+                    self.W = self.W_min*(w_scale)**(1/exp_den)
+
                     #start with the new best rooster
                     self.current_particle = 0
                 
@@ -565,10 +599,10 @@ class swarm:
                 if chicken_type == 0: #update rooster location
                     self.move_rooster(self.current_particle)
 
-                elif (chicken_type == 1): #update hen
+                elif (chicken_type == 1): #update hen location
                     self.move_hen(self.current_particle)
 
-                elif (chicken_type == 2): #update hen location
+                elif (chicken_type == 2): #update mother hen location
                     self.move_hen(self.current_particle)
 
                 elif chicken_type == 3: #update chick location

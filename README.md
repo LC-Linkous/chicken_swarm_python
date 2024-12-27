@@ -1,11 +1,9 @@
 # improved_chicken_swarm_python
 
-# CODE UPDATE IN PROGRESS 12/26/2024
-
-Improved chicken swarm optimizer written in Python. Branch modified from [chicken swarm python](https://github.com/LC-Linkous/chicken_swarm_python) (main repo branch).
+Improved chicken swarm optimizer written in Python. This is based off of the 2015 ICSO algorithm in [2]. Other updates to the algorithm will be posted as other branches.
 
 
-Base structure modified from the [adaptive timestep PSO optimizer](https://github.com/jonathan46000/pso_python) by [jonathan46000](https://github.com/jonathan46000) to keep a consistent format across optimizers in AntennaCAT.
+Branch modified from [chicken swarm python](https://github.com/LC-Linkous/chicken_swarm_python) (main repo branch). Base structure modified from the [adaptive timestep PSO optimizer](https://github.com/jonathan46000/pso_python) by [jonathan46000](https://github.com/jonathan46000) to keep a consistent format across optimizers in AntennaCAT.
 
 
 Now featuring AntennaCAT hooks for GUI integration and user input handling.
@@ -49,7 +47,30 @@ In CSO, there is an absence of a direct random velocity component, which is an i
 
 ## Improved Chicken Swarm Optimization
 
-Improved Chicken Swarm [2]
+Improved Chicken Swarm [2] follows the same logic as the original Chicken Swarm, with an update to the movement model of any chicken classified as a 'chick' for each generation, a.k.a the worst preforming agents in each swarm for each generation. 
+
+
+Instead, chicks only learn from their mother hens and not the roosters. One benefit of this is that in traditional chicken swarm, chicks will find a local optima if their mother hen does and will likely get stuck if the mother hen does. In the Improved Chicken Swarm algorithm, the location of the rooster is considered.
+
+
+
+
+ Classic Chicken Swarm Chick Movement:
+
+```
+nextLoc = currentLoc + FL*(locationMother - currentLoc)
+```
+
+
+
+Improved Chicken Swarm Chick Movement:
+```
+nextLoc = weight*currentLoc + FL*(locationMother - currentLoc) + C(locationRooster - currentLoc)
+```
+
+
+In both cases, FL is a randomly selected integer value (0 or 2) that determines if a chick follows the mother. C is the learning factor, which weights how much the chicks learn from the rooster in the sub-group of the swarm. The weighted value for the current location of the chick in the Improved Chicken Swarm algorithm is similar to the inertia weight in the traditional PSO algorithm. 
+
 
 
 

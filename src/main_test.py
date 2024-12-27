@@ -14,7 +14,6 @@
 ##--------------------------------------------------------------------\
 
 
-import numpy as np
 from chicken_swarm import swarm
 # OBJECTIVE FUNCTION SELECTION
 #import one_dim_x_test.configs_F as func_configs     # single objective, 1D input
@@ -51,6 +50,13 @@ if __name__ == "__main__":
     G = 70                        # Reorganize groups every G steps 
     NO_OF_PARTICLES = RN + HN + MN + CN      # Number of particles in swarm
 
+    #improved chicken swarm specific 
+    MIN_WEIGHT = 0.4
+    MAX_WEIGHT = 0.9
+    LEARNING_CONSTANT = 0.4
+
+
+
     # swarm setup
     best_eval = 1
 
@@ -65,7 +71,8 @@ if __name__ == "__main__":
     mySwarm = swarm(NO_OF_PARTICLES, LB, UB,
                     OUT_VARS, TARGETS,
                     E_TOL, MAXIT, BOUNDARY, func_F, constr_F,
-                    RN=RN, HN=HN, MN=MN, CN=CN, G=G)  
+                    RN=RN, HN=HN, MN=MN, CN=CN, G=G,
+                    W_min=MIN_WEIGHT, W_max=MAX_WEIGHT, C=LEARNING_CONSTANT)  
     
 
     # instantiation of particle swarm optimizer 
