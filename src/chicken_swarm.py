@@ -11,7 +11,7 @@
 #       literature.     
 #
 #   Author(s): Lauren Linkous
-#   Last update: November 28, 2024
+#   Last update: March 13, 2025
 ##--------------------------------------------------------------------\
 #! /usr/bin/python3
 
@@ -19,39 +19,46 @@
 import numpy as np
 from numpy.random import Generator, MT19937
 import sys
-import time
 np.seterr(all='raise')
 
 
 class swarm:
-    # arguments should take form: 
-    # swarm(int, 
-    # [[float, float, ...]], [[float, float, ...]], [[float, ...]], 
-    # int, [[float, ...]], 
-    # float, int, int, func, func,
-    # int, int, int, int, int,
-    # obj, bool) 
-    # int boundary 1 = random,      2 = reflecting
-    #              3 = absorbing,   4 = invisible
-    def __init__(self, NO_OF_PARTICLES, 
-                 lbound, ubound,
-                 output_size, targets,
-                 E_TOL, maxit, boundary, 
-                 obj_func, constr_func,
-                 RN=3, HN=12, MN=8, CN=15, G=150,
-                 beta=0.5, quantum_roosters=False,
-                 parent=None, detailedWarnings=False,
-                 runningWithSim=True):  
+    # arguments should take the form: 
+    # swarm([[float, float, ...]], [[float, float, ...]], [[float, ...]], float, int,
+    # func, func,
+    # dataFrame,
+    # class obj) 
+    #  
+    # opt_df contains class-specific tuning parameters
+    # boundary: int. 1 = random, 2 = reflecting, 3 = absorbing,   4 = invisible
+    # RN: int
+    # HN: int
+    # MN: int
+    # CN: int
+    # G: int
+    # beta: float
+    # quantum_roosters: bool
+    #
 
-        
+    def __init__(self,  lbound, ubound, targets,E_TOL, maxit,
+                 obj_func, constr_func, 
+                 opt_df,
+                 parent=None): 
+
         # Optional parent class func call to write out values that trigger constraint issues
         self.parent = parent 
-        # Additional output for advanced debugging to TERMINAL. 
-        # Some of these messages will be returned via debugTigger
-        self.detailedWarnings = detailedWarnings 
 
-        # AntennaCAT vars
-        self.runningWithSim=runningWithSim
+        #unpack the opt_df standardized vals
+        boundary = opt_df['BOUNDARY'][0]
+        RN = opt_df['RN'][0]
+        HN = opt_df['HN'][0]
+        MN = opt_df['MN'][0]
+        CN = opt_df['CN'][0]
+        G = opt_df['G'][0]
+        NO_OF_PARTICLES = RN + HN + MN + CN
+        beta = opt_df['BETA'][0]
+        quantum_roosters = opt_df['QUANTUM_ROOSTERS'][0]
+
 
 
         heightl = np.shape(lbound)[0]
@@ -244,13 +251,13 @@ class swarm:
 
             self.quantum_roosters = quantum_roosters
             self.beta = beta
-            self.output_size = output_size
+            self.output_size = len(targets)
             self.input_size = len(lbound)
             self.Active = np.ones((NO_OF_PARTICLES))                        
             self.Gb = sys.maxsize*np.ones((1,np.max([heightl, widthl])))   
-            self.F_Gb = sys.maxsize*np.ones((1,output_size))                
+            self.F_Gb = sys.maxsize*np.ones((1,self.output_size))                
             self.Pb = sys.maxsize*np.ones(np.shape(self.M))                 
-            self.F_Pb = sys.maxsize*np.ones((NO_OF_PARTICLES,output_size))  
+            self.F_Pb = sys.maxsize*np.ones((NO_OF_PARTICLES,self.output_size))  
             self.targets = np.array(targets).reshape(-1, 1)                      
             self.maxit = maxit                                             
             self.E_TOL = E_TOL                                              
@@ -267,7 +274,8 @@ class swarm:
             self.InitDeviation = self.absolute_mean_deviation_of_particles()
                                          
 
-            self.error_message_generator("swarm successfully initialized")
+            self.debug_message_printout("swarm successfully initialized")
+
 
     def call_objective(self, allow_update):
         if self.Active[self.current_particle]:
@@ -505,7 +513,7 @@ class swarm:
         elif self.boundary == 4:
             self.invisible_bound(particle)
         else:
-            self.error_message_generator("Error: No boundary is set!")
+            self.debug_message_printout("Error: No boundary is set!")
 
     def check_global_local(self, Flist, particle):
 
@@ -543,7 +551,7 @@ class swarm:
                 "Absolute mean deviation\n" + \
                 str(self.absolute_mean_deviation_of_particles()) +"\n" + \
                 "-----------------------------"
-            self.error_message_generator(msg)
+            self.debug_message_printout(msg)
             
         if self.allow_update: # The first time step is called, this is false
             if self.Active[self.current_particle]:
@@ -580,12 +588,13 @@ class swarm:
             self.current_particle = self.current_particle + 1
             if self.current_particle == self.number_of_particles:
                 self.current_particle = 0
+
             if self.complete() and not suppress_output:
                 msg =  "\nPoints: \n" + str(self.Gb) + "\n" + \
                     "Iterations: \n" + str(self.iter) + "\n" + \
                     "Flist: \n" + str(self.F_Gb) + "\n" + \
                     "Norm Flist: \n" + str(np.linalg.norm(self.F_Gb)) + "\n"
-                self.error_message_generator(msg)
+                self.debug_message_printout(msg)
 
     def export_swarm(self):
         swarm_export = {'lbound': self.lbound,
@@ -642,10 +651,10 @@ class swarm:
         return iteration, best_eval
         
     def get_optimized_soln(self):
-        return self.Gb 
+        return self.Gb.reshape(-1, 1) #standardization  
     
     def get_optimized_outs(self):
-        return self.F_Gb
+        return self.F_Gb[0] #correction for extra brackets that happen with the math/passing
     
     def absolute_mean_deviation_of_particles(self):
         mean_data = np.array(np.mean(self.M, axis=0)).reshape(1, -1)
@@ -657,8 +666,9 @@ class swarm:
         return abs_mean_dev
 
 
-    def error_message_generator(self, msg):
+    def debug_message_printout(self, msg):
         if self.parent == None:
             print(msg)
         else:
-            self.parent.updateStatusText(msg)
+            self.parent.debug_message_printout(msg)
+

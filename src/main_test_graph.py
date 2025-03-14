@@ -12,11 +12,12 @@
 #       matplotlib plot of particle location
 #
 #   Author(s): Lauren Linkous
-#   Last update: August 18, 2024
+#   Last update: March 13, 2025
 ##--------------------------------------------------------------------\
 
 
 import numpy as np
+import pandas as pd
 import time
 import matplotlib.pyplot as plt
 from chicken_swarm import swarm
@@ -27,15 +28,13 @@ from chicken_swarm import swarm
 import lundquist_3_var.configs_F as func_configs     # multi objective function
 
 
-
-
 class TestGraph():
     def __init__(self):
 
         self.ctr = 0
 
         # swarm variables
-        E_TOL = 10 ** -6                    # Convergence Tolerance
+        TOL = 10 ** -6                    # Convergence Tolerance
         MAXIT = 10000                       # Maximum allowed iterations
         BOUNDARY = 1                        # int boundary 1 = random,      2 = reflecting
                                             #              3 = absorbing,   4 = invisible
@@ -59,7 +58,6 @@ class TestGraph():
         MN = 15                       # Number of mother hens in total hens
         CN = 20                       # Total number of chicks
         G = 70                        # Reorganize groups every G steps 
-        NO_OF_PARTICLES = RN + HN + MN + CN       # Number of particles in swarm
 
         # quantum swarm variables
         BETA = 0.5                  #Float constant controlling influence 
@@ -77,21 +75,26 @@ class TestGraph():
 
         self.suppress_output = True   # Suppress the console output of particle swarm
 
-        detailedWarnings = False      # Optional boolean for detailed feedback
-                                        # (Independent of suppress output. 
-                                        #  Includes error messages and warnings)
-
         self.allow_update = True      # Allow objective call to update state 
 
 
-
-
-        self.mySwarm = swarm(NO_OF_PARTICLES, LB, UB,
-                        OUT_VARS, TARGETS,
-                        E_TOL, MAXIT, BOUNDARY, func_F, constr_F, 
-                        RN=RN, HN=HN, MN=MN, CN=CN, G=G,
-                        beta=BETA, quantum_roosters= QUANTUM_ROOSTERS,
-                        parent=parent, detailedWarnings=detailedWarnings)  
+        # Constant variables
+        opt_params = {'BOUNDARY': [BOUNDARY],                   # int boundary 1 = random,      2 = reflecting
+                                                                #              3 = absorbing,   4 = invisible
+                    'RN': [RN],                                 # Total number of roosters
+                    'HN': [HN],                                 # Total number of hens
+                    'MN': [MN],                                 # Number of mother hens in total hens
+                    'CN': [CN],                                 # Total number of chicks
+                    'G': [G],                                   # Reorganize groups every G steps 
+                    'BETA': [BETA],                             # Float constant controlling influence 
+                                                                #     between the personal and global best positions 
+                    'QUANTUM_ROOSTERS': [QUANTUM_ROOSTERS]}     # Boolean. Use quantum rooster or classical movement
+        
+        opt_df = pd.DataFrame(opt_params)
+        self.mySwarm = swarm(LB, UB, TARGETS, TOL, MAXIT,
+                                func_F, constr_F,
+                                opt_df,
+                                parent=parent) 
 
 
         # Matplotlib setup
@@ -112,7 +115,7 @@ class TestGraph():
         self.ax2.set_zlabel('x_3')
         self.scatter2 = None
 
-    def updateStatusText(self, txt):
+    def debug_message_printout(self, txt):
         if txt is None:
             return
         # sets the string as it gets it
