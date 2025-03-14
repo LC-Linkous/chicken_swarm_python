@@ -10,11 +10,12 @@
 #       for integration in the AntennaCAT GUI.
 #
 #   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: August 18, 2024
+#   Last update: March 13, 2025
 ##--------------------------------------------------------------------\
 
-
+import pandas as pd
 import time
+
 from chicken_swarm import swarm
 
 # OBJECTIVE FUNCTION SELECTION
@@ -26,7 +27,7 @@ import lundquist_3_var.configs_F as func_configs     # multi objective function
 class TestDetails():
     def __init__(self):
         # swarm variables
-        E_TOL = 10 ** -6                    # Convergence Tolerance
+        TOL = 10 ** -6                      # Convergence Tolerance
         MAXIT = 10000                       # Maximum allowed iterations
         BOUNDARY = 1                        # int boundary 1 = random,      2 = reflecting
                                             #              3 = absorbing,   4 = invisible
@@ -52,7 +53,6 @@ class TestDetails():
         MN = 15                       # Number of mother hens in total hens
         CN = 20                       # Total number of chicks
         G = 10                        # Reorganize groups every G steps 
-        NO_OF_PARTICLES = RN + HN + MN + CN       # Number of particles in swarm
 
         #improved chicken swarm specific 
         
@@ -72,20 +72,26 @@ class TestDetails():
 
         self.suppress_output = True   # Suppress the console output of particle swarm
 
-        detailedWarnings = False      # Optional boolean for detailed feedback
-                                        # (Independent of suppress output. 
-                                        #  Includes error messages and warnings)
-
         self.allow_update = True      # Allow objective call to update state 
 
+        # Constant variables
+        opt_params = {'BOUNDARY': [BOUNDARY],   # int boundary 1 = random,      2 = reflecting
+                                                #              3 = absorbing,   4 = invisible
+                    'RN': [RN],                 # Total number of roosters
+                    'HN': [HN],                 # Total number of hens
+                    'MN': [MN],                 # Number of mother hens in total hens
+                    'CN': [CN],                 # Total number of chicks
+                    'G': [G],                   # Reorganize groups every G steps 
+                    'MIN_WEIGHT': [MIN_WEIGHT], 
+                    'MAX_WEIGHT': [MAX_WEIGHT],
+                    'LEARNING_CONSTANT': [LEARNING_CONSTANT]}
 
-        self.mySwarm = swarm(NO_OF_PARTICLES, LB, UB,
-                        OUT_VARS, TARGETS,
-                        E_TOL, MAXIT, BOUNDARY, func_F, constr_F,
-                        RN=RN, HN=HN, MN=MN, CN=CN, G=G,
-                        W_min=MIN_WEIGHT, W_max=MAX_WEIGHT, C=LEARNING_CONSTANT,
-                        parent=parent, detailedWarnings=detailedWarnings)
-
+        opt_df = pd.DataFrame(opt_params)
+        self.mySwarm = swarm(LB, UB, TARGETS, TOL, MAXIT,
+                                func_F, constr_F,
+                                opt_df,
+                                parent=parent)   
+    
 
     def debug_message_printout(self, txt):
         if txt is None:
