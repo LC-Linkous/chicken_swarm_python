@@ -10,11 +10,11 @@
 #       for integration in the AntennaCAT GUI.
 #
 #   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: August 18, 2024
+#   Last update: March 13, 2025
 ##--------------------------------------------------------------------\
 
 
-import numpy as np
+import pandas as pd
 from chicken_swarm import swarm
 # OBJECTIVE FUNCTION SELECTION
 #import one_dim_x_test.configs_F as func_configs     # single objective, 1D input
@@ -25,7 +25,7 @@ import himmelblau.configs_F as func_configs         # single objective, 2D input
 
 if __name__ == "__main__":
     # swarm variables
-    E_TOL = 10 ** -6                    # Convergence Tolerance
+    TOL = 10 ** -6                      # Convergence Tolerance
     MAXIT = 10000                       # Maximum allowed iterations
     BOUNDARY = 1                        # int boundary 1 = random,      2 = reflecting
                                         #              3 = absorbing,   4 = invisible
@@ -49,7 +49,6 @@ if __name__ == "__main__":
     MN = 15                       # Number of mother hens in total hens
     CN = 20                       # Total number of chicks
     G = 70                        # Reorganize groups every G steps 
-    NO_OF_PARTICLES = RN + HN + MN + CN      # Number of particles in swarm
 
     # swarm setup
     best_eval = 1
@@ -60,13 +59,21 @@ if __name__ == "__main__":
 
     allow_update = True      # Allow objective call to update state 
 
+    # Constant variables
+    opt_params = {'BOUNDARY': [BOUNDARY],   # int boundary 1 = random,      2 = reflecting
+                                            #              3 = absorbing,   4 = invisible
+                'RN': [RN],                 # Total number of roosters
+                'HN': [HN],                 # Total number of hens
+                'MN': [MN],                 # Number of mother hens in total hens
+                'CN': [CN],                 # Total number of chicks
+                'G': [G]}                   # Reorganize groups every G steps 
 
+    opt_df = pd.DataFrame(opt_params)
+    mySwarm = swarm(LB, UB, TARGETS, TOL, MAXIT,
+                            func_F, constr_F,
+                            opt_df,
+                            parent=parent)   
 
-    mySwarm = swarm(NO_OF_PARTICLES, LB, UB,
-                    OUT_VARS, TARGETS,
-                    E_TOL, MAXIT, BOUNDARY, func_F, constr_F,
-                    RN=RN, HN=HN, MN=MN, CN=CN, G=G)  
-    
 
     # instantiation of particle swarm optimizer 
     while not mySwarm.complete():
