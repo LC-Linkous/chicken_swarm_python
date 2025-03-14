@@ -12,7 +12,7 @@ This branch of the repository is part of a series of replication studies. It is 
 ## Table of Contents
 * [Chicken Swarm Optimization](#chicken-swarm-optimization)
 * [Quantum Inspired Optimization](#quantum-inspired-optimization)
-* [Quantum Particle Swarm Optimization](#quantum-particle-swarm-optimization)
+* [Quantum Chicken Swarm Optimization](#quantum-chicken-swarm-optimization)
     * [Mean Best Position](#mean-best-position)
     * [Position Update](#position-update)
 * [Requirements](#requirements)
@@ -26,7 +26,7 @@ This branch of the repository is part of a series of replication studies. It is 
       * [Creating a Custom Objective Function](#creating-a-custom-objective-function)
       * [Internal Objective Function Example](internal-objective-function-example)
 * [Examples](#example-implementations)
-    * [Basic PSO Example](#basic-pso-example)
+    * [Basic Swarm Example](#basic-swarm-example)
     * [Detailed Messages](#detailed-messages)
     * [Realtime Graph](#realtime-graph)
 * [References](#references)
@@ -118,7 +118,7 @@ Where:
 * $g$ is the global best position of the swarm.
 * $u$ is a uniformly distributed random number in the range (0, 1).
 * The logarithmic term $log(1/u)$ comes from the distribution properties of quantum systems.
-* $\beta \cdot \lvert p−g \rvert $ scales the exploration step based on the distance between the personal and global best positions.
+* $\beta \cdot \lvert p−g \rvert$ scales the exploration step based on the distance between the personal and global best positions.
 * $log(1/u)$ introduces a random factor with a bias towards smaller values (since $u$ is between 0 and 1, $log(1/u)$ is negative, making $−log⁡(1/u)$ positive).
 
 
