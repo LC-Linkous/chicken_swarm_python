@@ -17,7 +17,7 @@ Now featuring AntennaCAT hooks for GUI integration and user input handling.
     * [Objective Function Handling](#objective-function-handling)
       * [Creating a Custom Objective Function](#creating-a-custom-objective-function)
       * [Internal Objective Function Example](#internal-objective-function-example)
-    * [Target vs. Threshold Configuration]
+    * [Target vs. Threshold Configuration](#target-vs-threshold-configuration)
 * [Examples](#example-implementations)
     * [Basic Swarm Example](#basic-swarm-example)
     * [Detailed Messages](#detailed-messages)
