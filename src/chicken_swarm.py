@@ -11,7 +11,7 @@
 #       literature.     
 #
 #   Author(s): Lauren Linkous
-#   Last update: June 28, 2025
+#   Last update: June 6, 2026
 ##--------------------------------------------------------------------\
 #! /usr/bin/python3
 
@@ -177,11 +177,11 @@ class swarm:
             # classificition: 0 = rooster, 1 = hen, 2 = mother hen, 3 = chicks
             self.chicken_info = np.array([0, 0, -1])
 
-            #randomly initialize the positions 
-            self.M = np.round(np.vstack(np.multiply(self.rng.random((np.max([heightl, 
-                                                                     widthl]),1)), 
-                                                                     variation) + 
-                                                                     lbound), self.number_decimals)    
+            #randomly initialize the positions
+            # NOTE: first particle uses the SAME init form as the loop below.
+            # The previous rng.random((max,1)) broadcast to a malformed (N,N)
+            # first row and collapsed self.M's shape (gave N+1 rows).
+            self.M = np.round(np.array(np.multiply(self.rng.random((1,np.max([heightl, widthl]))), variation)+lbound), self.number_decimals)
 
 
             if NO_OF_PARTICLES > 1:
@@ -347,9 +347,9 @@ class swarm:
         if self.evaluate_threshold == True: #THRESHOLD
             ctr = 0
             for i in targets:
-                o_thres = int(self.obj_threshold[ctr]) #force type as err check
-                t = targets[ctr]
-                fv = Fvals[ctr]
+                o_thres = int(self.obj_threshold[ctr].item()) #force type as err check (NumPy 2 safe)
+                t = targets[ctr].item()
+                fv = Fvals[ctr].item()
 
                 if o_thres == 0: #TARGET. default
                     # sets Flist[ctr] as abs distance of  Fvals[ctr] from target
@@ -518,7 +518,9 @@ class swarm:
         group_nums = np.arange(self.RN)
 
         # first rooster, to reset the array
-        self.chicken_info = [0, 0, -1]
+        # NOTE: use np.array (not a plain list) to match __init__ and keep
+        # 2-D indexing valid for the chick-assignment branch below.
+        self.chicken_info = np.array([0, 0, -1])
 
         for i in range(1,int(self.number_of_particles)):
             if classList[i] == 0: #rooster
@@ -818,4 +820,3 @@ class swarm:
             print(msg)
         else:
             self.parent.debug_message_printout(msg)
-
