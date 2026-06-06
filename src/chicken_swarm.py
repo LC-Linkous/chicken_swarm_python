@@ -6,7 +6,7 @@
 #   A basic chicken swarm optimization class. 
 #
 #   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: June 28, 2025
+#   Last update: June 6, 2026
 ##--------------------------------------------------------------------\
 
 
@@ -173,11 +173,11 @@ class swarm:
             # classificition: 0 = rooster, 1 = hen, 2 = mother hen, 3 = chicks
             self.chicken_info = np.array([0, 0, -1])
 
-            #randomly initialize the positions 
-            self.M = np.vstack(np.multiply(self.rng.random((np.max([heightl, 
-                                                                     widthl]),1)), 
-                                                                     variation) + 
-                                                                     lbound)    
+            #randomly initialize the positions
+            # NOTE: the first particle is initialized with the SAME form as the loop
+            # below. The previous version used rng.random((max(h,w),1)) here, which
+            # broadcast to a malformed (N,N) first row and collapsed self.M's shape.
+            self.M = np.round(np.array(np.multiply(self.rng.random((1,np.max([heightl, widthl]))), variation)+lbound), self.number_decimals)
 
 
             if NO_OF_PARTICLES > 1:
@@ -338,9 +338,9 @@ class swarm:
         if self.evaluate_threshold == True: #THRESHOLD
             ctr = 0
             for i in targets:
-                o_thres = int(self.obj_threshold[ctr]) #force type as err check
-                t = targets[ctr]
-                fv = Fvals[ctr]
+                o_thres = int(self.obj_threshold[ctr].item()) #force type as err check (NumPy 2 safe)
+                t = targets[ctr].item()
+                fv = Fvals[ctr].item()
 
                 if o_thres == 0: #TARGET. default
                     # sets Flist[ctr] as abs distance of  Fvals[ctr] from target
@@ -604,7 +604,10 @@ class swarm:
                         self.lbound
                     ), self.number_decimals)
             
-    def reflecting_bound(self, particle):        
+    def reflecting_bound(self, particle):
+        # NOTE: chicken swarm has no velocity array (chickens move by position
+        # rules), so unlike PSO there is no velocity to reflect. The position is
+        # snapped back to the last in-bounds location.
         update = self.check_bounds(particle)
         constr = self.constr_func(self.M[particle])
         if (update > 0) and constr:
@@ -613,6 +616,8 @@ class swarm:
             self.random_bound(particle)
 
     def absorbing_bound(self, particle):
+        # NOTE: chicken swarm has no velocity array, so there is no velocity to
+        # absorb. The position is snapped back to the last in-bounds location.
         update = self.check_bounds(particle)
         constr = self.constr_func(self.M[particle])
         if (update > 0) and constr:
@@ -857,4 +862,3 @@ class swarm:
             print(msg)
         else:
             self.parent.debug_message_printout(msg)
-
