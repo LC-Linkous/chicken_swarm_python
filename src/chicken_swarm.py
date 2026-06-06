@@ -6,7 +6,7 @@
 #   A basic chicken swarm optimization class. 
 #
 #   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: June 28, 2025
+#   Last update: June 6, 2026
 ##--------------------------------------------------------------------\
 
 
@@ -326,9 +326,9 @@ class swarm:
         if self.evaluate_threshold == True: #THRESHOLD
             ctr = 0
             for i in targets:
-                o_thres = int(self.obj_threshold[ctr]) #force type as err check
-                t = targets[ctr]
-                fv = Fvals[ctr]
+                o_thres = int(self.obj_threshold[ctr].item()) #force type as err check (NumPy 2 safe)
+                t = targets[ctr].item()
+                fv = Fvals[ctr].item()
 
                 if o_thres == 0: #TARGET. default
                     # sets Flist[ctr] as abs distance of  Fvals[ctr] from target
@@ -580,22 +580,24 @@ class swarm:
                     ), self.number_decimals)
 
             
-    def reflecting_bound(self, particle):        
+    def reflecting_bound(self, particle):
+        # NOTE: chicken swarm has no velocity array (chickens move by position
+        # rules, not velocity), so unlike the PSO optimizers there is no velocity
+        # to reflect. The position is snapped back to the last in-bounds location.
         update = self.check_bounds(particle)
         constr = self.constr_func(self.M[particle])
         if (update > 0) and constr:
             self.M[particle] = 1*self.Mlast
-            NewV = np.multiply(-1,self.V[update-1,particle])
-            self.V[update-1,particle] = NewV
         if not constr:
             self.random_bound(particle)
 
     def absorbing_bound(self, particle):
+        # NOTE: chicken swarm has no velocity array, so there is no velocity to
+        # absorb. The position is snapped back to the last in-bounds location.
         update = self.check_bounds(particle)
         constr = self.constr_func(self.M[particle])
         if (update > 0) and constr:
             self.M[particle] = 1*self.Mlast
-            self.V[particle,update-1] = 0
         if not constr:
             self.random_bound(particle)
 
@@ -790,6 +792,8 @@ class swarm:
         self.Flist = np.array(swarm_export['Flist'][0])                                                 
         self.Fvals= np.array(swarm_export['Fvals'][0])                                               
         self.Mlast= np.array(swarm_export['Mlast'][0]) 
+        # rebuild chicken_info on the next reorganize_swarm cycle; the population
+        # split (RN/HN/MN/CN) and sort order are restored above.
 
 
     def get_obj_inputs(self):
@@ -820,4 +824,3 @@ class swarm:
             print(msg)
         else:
             self.parent.debug_message_printout(msg)
-
