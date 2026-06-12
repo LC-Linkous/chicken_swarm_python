@@ -9,29 +9,27 @@
 #       error messages directly from the 'swarm' class. Format updates are 
 #       for integration in the AntennaCAT GUI.
 #
-#   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: June 28, 2025
+#   Author(s): Lauren Linkous
+#   Last update: June 11, 2026
 ##--------------------------------------------------------------------\
-
 
 import pandas as pd
 import numpy as np
-from chicken_swarm import swarm
 
+from chicken_swarm import swarm
 # OBJECTIVE FUNCTION SELECTION
 #import one_dim_x_test.configs_F as func_configs     # single objective, 1D input
-import himmelblau.configs_F as func_configs         # single objective, 2D input
-#import lundquist_3_var.configs_F as func_configs     # multi objective function
+#import himmelblau.configs_F as func_configs         # single objective, 2D input
+import lundquist_3_var.configs_F as func_configs     # multi objective function
 
 
 
 if __name__ == "__main__":
-    # swarm variables
+    # constant variables
     TOL = 10 ** -6                      # Convergence Tolerance
     MAXIT = 10000                       # Maximum allowed iterations
     BOUNDARY = 1                        # int boundary 1 = random,      2 = reflecting
                                         #              3 = absorbing,   4 = invisible
-
 
     # Objective function dependent variables
     LB = func_configs.LB                    # Lower boundaries, [[0.21, 0, 0.1]]
@@ -39,6 +37,7 @@ if __name__ == "__main__":
     IN_VARS = func_configs.IN_VARS          # Number of input variables (x-values)   
     OUT_VARS = func_configs.OUT_VARS        # Number of output variables (y-values)
     TARGETS = func_configs.TARGETS          # Target values for output
+
     # target format. TARGETS = [0, ...] 
 
     # threshold is same dims as TARGETS
@@ -57,17 +56,32 @@ if __name__ == "__main__":
 
         
     # chicken swarm specific
-    RN = 10                       # Total number of roosters
-    HN = 20                       # Total number of hens
-    MN = 15                       # Number of mother hens in total hens
-    CN = 20                       # Total number of chicks
-    G = 70                        # Reorganize groups every G steps 
+    # population split per the paper's Sec. 4.1.2 settings (pop = 100,
+    # rPercent = 0.15, hPercent = 0.7, mPercent = 0.5, G = 10):
+    RN = 15                       # Total number of roosters
+    HN = 35                       # Total number of (non-mother) hens
+    MN = 35                       # Number of mother hens in total hens
+    CN = 15                       # Total number of chicks
+    G = 10                        # Reorganize groups every G full cycles 
+
+    #improved chicken swarm (2022 ICSO) specific
+    # PSO hybridization (Secs. 3.2-3.3) and elimination-dispersal (Sec. 3.1)
+    # C1 = C2 = 2 and PED = 0.25 are the paper's settings (Sec. 4.1.2).
+    # The paper does not specify a PSO inertia weight; W decreases linearly
+    # MAX_WEIGHT -> MIN_WEIGHT over the run. Set them equal for a constant W.
+    MIN_WEIGHT = 0.4              # PSO inertia weight, minimum
+    MAX_WEIGHT = 0.9              # PSO inertia weight, maximum/starting
+    C1 = 2.0                      # PSO cognitive learning factor (personal best)
+    C2 = 2.0                      # PSO social learning factor (global best)
+    PED = 0.25                    # elimination-dispersal probability, 0-1
+
 
     best_eval = 1
     parent = None             # for the optimizer test ONLY
     evaluate_threshold = True # use target or threshold. True = THRESHOLD, False = EXACT TARGET
     suppress_output = True    # Suppress the console output of particle swarm
     allow_update = True       # Allow objective call to update state 
+
 
     # Constant variables
     opt_params = {'BOUNDARY': [BOUNDARY],   # int boundary 1 = random,      2 = reflecting
@@ -76,7 +90,12 @@ if __name__ == "__main__":
                 'HN': [HN],                 # Total number of hens
                 'MN': [MN],                 # Number of mother hens in total hens
                 'CN': [CN],                 # Total number of chicks
-                'G': [G]}                   # Reorganize groups every G steps 
+                'G': [G],                   # Reorganize groups every G steps 
+                'MIN_WEIGHT': [MIN_WEIGHT],
+                'MAX_WEIGHT': [MAX_WEIGHT],
+                'C1': [C1],
+                'C2': [C2],
+                'PED': [PED]}
 
     opt_df = pd.DataFrame(opt_params)
     mySwarm = swarm(LB, UB, TARGETS, TOL, MAXIT,
@@ -84,8 +103,8 @@ if __name__ == "__main__":
                             opt_df,
                             parent=parent, 
                             evaluate_threshold=evaluate_threshold, obj_threshold=THRESHOLD)  
-  
 
+    
 
     # instantiation of particle swarm optimizer 
     while not mySwarm.complete():

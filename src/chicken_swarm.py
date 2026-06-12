@@ -1,12 +1,34 @@
 #! /usr/bin/python3
 
 ##--------------------------------------------------------------------\
-#   chicken_swarm_python
+#   2022_improved_chicken_swarm_python
 #   './chicken_swarm_python/src/chicken_swarm.py'
-#   A basic chicken swarm optimization class. 
+#   2022 'improved' chicken swarm optimization (ICSO) class.
+#   Based on:
+#       J. Liang, L. Wang, and M. Ma, "An Improved Chicken Swarm
+#       Optimization Algorithm for Solving Multimodal Optimization
+#       Problems," Computational Intelligence and Neuroscience,
+#       vol. 2022, Article ID 5359732, 2022.
+#       https://doi.org/10.1155/2022/5359732
+#
+#   The ICSO adds two mechanisms to the standard (Meng et al. 2014) CSO:
+#   1) RECSO (paper Sec. 3.1): at each role update (after the first), the
+#      BFA-inspired reproduction operation replaces the chicks (per the
+#      PREVIOUS role assignment) with copies of the same number of
+#      best-performing individuals (Eq. 7), then the elimination-dispersal
+#      operation scatters those chicks to random positions in the search
+#      space with probability Ped = 0.25 (Eq. 8). Roles are then
+#      re-assigned by fitness.
+#   2) CSO-PSO (paper Sec. 3.2/3.3): at EVERY iteration (one full cycle
+#      through the population in this state-machine framework), the swarm
+#      is randomly re-divided into two equal-scale subgroups. Subgroup 1
+#      moves by the (RE)CSO role rules; subgroup 2 moves by standard PSO
+#      velocity-position updates (c1 = c2 = 2, paper Sec. 4.1.2). The
+#      subgroups share one population, one fitness record, and one global
+#      best, which implements the paper's merge/information-exchange step.
 #
 #   Author(s): Lauren Linkous, Jonathan Lundquist
-#   Last update: June 6, 2026
+#   Last update: June 11, 2026
 ##--------------------------------------------------------------------\
 
 
@@ -23,7 +45,7 @@ class swarm:
     # dataFrame,
     # class obj, 
     # bool, [int, int, ...], 
-    # int)
+    # int) 
     #  
     # opt_df contains class-specific tuning parameters
     # boundary: int. 1 = random, 2 = reflecting, 3 = absorbing,   4 = invisible
@@ -32,14 +54,20 @@ class swarm:
     # MN: int
     # CN: int
     # G: int
+    # w_min: float (PSO inertia weight, minimum)
+    # w_max: float (PSO inertia weight, maximum/starting)
+    # c1: float (PSO cognitive learning factor, personal best)
+    # c2: float (PSO social learning factor, global best)
+    # ped: float (elimination-dispersal probability, 0-1)
     #
 
-    def __init__(self,  lbound, ubound, targets,E_TOL, maxit,
+    def __init__(self,  lbound, ubound, targets, E_TOL, maxit,
                  obj_func, constr_func, 
                  opt_df,
                  parent=None, 
                  evaluate_threshold=False, obj_threshold=None,
                  decimal_limit = 4): 
+        
 
         # Optional parent class func call to write out values that trigger constraint issues
         self.parent = parent 
@@ -47,6 +75,7 @@ class swarm:
 
         self.number_decimals = int(decimal_limit)  # limit the number of decimals
                                               # used in cases where real life has limitations on resolution
+
 
 
         #evaluation method for targets
@@ -76,6 +105,12 @@ class swarm:
         CN = int(opt_df['CN'][0])
         G = int(opt_df['G'][0])
         NO_OF_PARTICLES = RN + HN + MN + CN
+        W_min = float(opt_df['MIN_WEIGHT'][0])
+        W_max = float(opt_df['MAX_WEIGHT'][0])
+        C1 = float(opt_df['C1'][0])     # PSO cognitive learning factor
+        C2 = float(opt_df['C2'][0])     # PSO social learning factor
+        PED = float(opt_df['PED'][0])   # elimination-dispersal probability
+
 
 
         heightl = np.shape(lbound)[0]
@@ -119,11 +154,10 @@ class swarm:
             self.HN = HN    # hen number
             self.MN = MN    # mother hen number
             self.CN = CN    # chick number
-            total_chickens = RN + HN + MN + CN       
+            total_chickens = RN + HN + MN + CN
 
             self.G = G                       # num full cycles before updating the 
             self.G_steps = G*total_chickens  # how many iterations happen in a generation
-
  
             # error checking on population split
             if (NO_OF_PARTICLES < total_chickens):
@@ -165,15 +199,11 @@ class swarm:
             # classificition: 0 = rooster, 1 = hen, 2 = mother hen, 3 = chicks
             self.chicken_info = np.array([0, 0, -1])
 
-            #randomly initialize the positions 
-            # self.M = np.vstack(np.multiply(self.rng.random((np.max([heightl, 
-            #                                                          widthl]),1)), 
-            #                                                          variation) + 
-            #                                                          lbound)    
-
+            #randomly initialize the positions
+            # NOTE: the first particle is initialized with the SAME form as the loop
+            # below. The previous version used rng.random((max(h,w),1)) here, which
+            # broadcast to a malformed (N,N) first row and collapsed self.M's shape.
             self.M = np.round(np.array(np.multiply(self.rng.random((1,np.max([heightl, widthl]))), variation)+lbound), self.number_decimals)
-            
-           
 
 
             if NO_OF_PARTICLES > 1:
@@ -206,7 +236,7 @@ class swarm:
                     # assign to the next group (i-1), and done.
                     self.chicken_info = \
                         np.vstack([self.chicken_info, 
-                                [classList[i-1], i-1, -1]])
+                                [classList[i-1], i-1, -1]])  #[ChickenTypeID, groupNumber, childNumTag]
 
                 elif (classList[i-1] == 1) or (classList[i-1] == 2): #hen, mother hen
                     # assign to a random group.
@@ -238,7 +268,7 @@ class swarm:
             self.MN                     : Number of mother hens. Integer.
             self.CN                     : Number of chicks. Integer.  
             self.chicken_info           : classification (R,H,C), group #, mother ID. Array.          
-            self.G                      : How often to randomize groups. Integer.
+            self.G                      : How often to randomize groups. Integer. Num full cycles of chickens
             self.output_size            : An integer value for the output size of obj func
             self.Active                 : An array indicating the activity status of each particle. (e.g., in bounds)
             self.Gb                     : Global best position, initialized with a large value.
@@ -258,6 +288,15 @@ class swarm:
             self.Flist                  : List to store fitness values.
             self.Fvals                  : List to store fitness values.
             self.Mlast                  : Last location of particle
+            self.W_max                  : Constant float. maximum, starting PSO inertia weight
+            self.W_min                  : Constant float. minimum PSO inertia weight.
+            self.W                      : (inertia) Weight of current particle. Decreases W_max -> W_min
+            self.C1                     : PSO cognitive learning factor. Weight of personal best (Pb) term.
+            self.C2                     : PSO social learning factor. Weight of global best (Gb) term.
+            self.PED                    : Probability of elimination-dispersal for replicated chicks. 0-1.
+            self.V                      : PSO velocity array. Same shape as self.M.
+            self.pso_flags              : Bool array. True = particle is in the PSO subgroup this cycle.
+            self.ran_reorganize         : Bool. Whether a fitness-based role assignment has happened.
             '''
 
             self.output_size = len(targets)
@@ -278,7 +317,30 @@ class swarm:
             self.boundary = boundary                                       
             self.Flist = []                                                 
             self.Fvals = []                                                 
-            self.Mlast = 1*self.ubound                                      
+            self.Mlast = 1*self.ubound            
+            self.W_max = W_max
+            self.W_min = W_min              
+            self.W = W_max  # linearly decreases to W_min. see pso_update()
+            self.C1 = C1            
+            self.C2 = C2
+            self.PED = PED
+            # PSO velocity array. initialized to zeros so that the first 
+            # PSO contribution is driven by the Pb/Gb terms only
+            self.V = np.zeros(np.shape(self.M))
+            # CSO/PSO subgroup membership flags. re-randomized at the start
+            # of every full cycle through the population. True = the
+            # particle moves by the PSO update this cycle (subgroup 2),
+            # False = the particle moves by the CSO role rules (subgroup 1)
+            self.pso_flags = np.zeros((NO_OF_PARTICLES), dtype=bool)
+            # safety flag. set when every particle has gone inactive
+            # (possible with INVISIBLE boundaries) so complete() can end
+            # the run instead of letting the driver loop forever
+            self.swarm_stalled = False
+            # tracks whether a fitness-based role assignment has happened
+            # yet. the reproduction & elimination-dispersal operations are
+            # skipped at the FIRST role update (paper Sec. 3.3 step 5(a)),
+            # when fitness-based roles have not been assigned
+            self.ran_reorganize = False
                                          
 
             self.debug_message_printout("swarm successfully initialized")
@@ -364,8 +426,6 @@ class swarm:
             Flist = abs(targets - Fvals)
 
         return Flist
-        
-
 
 
     # MOVEMENT MODELS
@@ -388,7 +448,7 @@ class swarm:
             # exp((fitness_random_rooster - fitness_this_rooster)/(abs(fitness_this_rooster)-epsilon))
             #sig_squared = np.exp((random_rooster_fitness-this_rooster_fitness)/(abs(this_rooster_fitness)+epsilon))
             # -709.00 and 709.00 are the integer limits to np.exp() on system that handles float64 at most (Windows)
-            clipped_val = np.clip(((random_rooster_fitness-this_rooster_fitness)/(abs(this_rooster_fitness)+epsilon)), -700.00, 700.00)
+            clipped_val = np.clip(((random_rooster_fitness-this_rooster_fitness)/(abs(this_rooster_fitness)+epsilon)), -709.00, 709.00)
             sig_squared = np.exp(clipped_val)
 
 
@@ -425,7 +485,7 @@ class swarm:
         fitness_this_chicken = np.linalg.norm(self.F_Pb[particle])
 
         # epsilon = 'smallest system constant'. improvised.
-        epsilon = 10e-50 
+        epsilon = 10e-30 
 
         # exp((FitnessThisChicken-FitnessRoosterGroupmate)/(abs(FitnessThisChicken)+epsilon))
         #S1 = np.exp((fitness_this_chicken-fitness_rooster)/(np.abs(fitness_this_chicken) + epsilon))
@@ -437,8 +497,10 @@ class swarm:
         # these clipped bounds are effectively are zero and inf
         # term_1 = S1*self.rng.uniform(0,1)*(rooster_loc-self.M[particle])
         # still dealing with overflow issues. apply cap to S1
-        S1 = np.clip(S1, -10e30, 10e30)
-
+        if S1 > 10e30:
+            S1 = 10e30
+        elif S1 < -10e30:
+            S1 = -10e30
         clipped_term1 = np.clip((S1*self.rng.uniform(0,1)*(rooster_loc-self.M[particle])), -10e30, 10e10)
         term_1 = clipped_term1
 
@@ -454,7 +516,10 @@ class swarm:
         #term_2 = S2*self.rng.uniform(0,1)*(random_chicken_loc-self.M[particle])
         # This still causes overflow:
         # clipped_term2 = np.clip((S2*self.rng.uniform(0,1)*(random_chicken_loc-self.M[particle])), -10e50, 10e10)
-        S2 = np.clip(S2, -10e30, 10e30)
+        if S2 > 10e30:
+            S2 = 10e30
+        elif S2 < -10e30:
+            S2 = -10e30
 
         clipped_term2 = np.clip((S2*self.rng.uniform(0,1)*(random_chicken_loc-self.M[particle])), -10e30, 10e10)
         term_2 = clipped_term2
@@ -464,15 +529,156 @@ class swarm:
 
 
     def move_chick(self, particle):
-        #nextLoc = currentLoc + FL*(locationMother - currentLoc)
-        # NOTE: FL is a value 0 or 2 that determines if a chick follows the mother
-        #  The chick RANDOMLY chooses between 0 or 2
 
-        mother_idx = int(self.chicken_info[particle][2]) # the the idx of the mother chicken
+        # The 2022 ICSO retains the STANDARD chick update. (paper Eq. 6)
+        # The depth-search improvement for chicks in this variant comes from
+        # the reproduction & elimination-dispersal operations at role update
+        # (see replication_elimination_dispersal()), NOT from a modified
+        # movement equation as in the 2015 improved chicken swarm.
+        # nextLoc = currentLoc + FL*(locationMother - currentLoc)
+        # NOTE: per paper Eq. 6, FL is a following coefficient drawn from
+        # (0,2). Other optimizers in the AntennaCAT chicken swarm family
+        # use rng.choice([0,2]) here instead; swap the line below to match
+        # the family behavior if preferred.
+
+        mother_idx = int(self.chicken_info[particle][2]) # the idx of the mother chicken
         mother_loc = self.M[mother_idx]
-        self.M[particle] = np.round(self.M[particle] + self.rng.choice([0,2])*(mother_loc-self.M[particle]), self.number_decimals)
+
+        FL = self.rng.uniform(0, 2)
+        self.M[particle] = np.round(self.M[particle] + FL*(mother_loc-self.M[particle]), self.number_decimals)
+
+
+    def assign_subgroups(self):
+        # CSO-PSO hybridization. 2022 ICSO, Sec. 3.2/3.3.
+        # "The whole population is randomly divided into two parts,
+        # namely, subgroup 1 and subgroup 2", with the same scales.
+        # Subgroup 1 (pso_flags == False) moves by the (RE)CSO role rules.
+        # Subgroup 2 (pso_flags == True) moves by the PSO velocity-position
+        # update. This re-division happens at every iteration in the paper;
+        # here, at the start of every full cycle through the population.
+        # Because both subgroups share one population, one fitness record,
+        # and one global best, the paper's 'merge subgroups to realize
+        # information exchange' step is implicit in this framework.
+
+        n_pso = self.number_of_particles // 2  # 'same scales'. if odd, the
+                                               # extra particle stays in the
+                                               # CSO subgroup
+        shuffled_idx = self.rng.permutation(self.number_of_particles)
+        self.pso_flags = np.zeros((self.number_of_particles), dtype=bool)
+        self.pso_flags[shuffled_idx[0:n_pso]] = True
+
+
+    def pso_update(self, particle):
+        # CSO-PSO hybridization. 2022 ICSO, Sec. 3.2/3.3 (paper step 6).
+        # This is the movement model for particles assigned to subgroup 2
+        # for the current cycle. It REPLACES the CSO role move for those
+        # particles (it is not a refinement applied after it).
+        # Standard PSO velocity-position update using the particle's
+        # personal best (Pb) and the swarm global best (Gb):
+        #   V = W*V + C1*rand*(Pb - X) + C2*rand*(Gb - X)
+        #   X = X + V
+        # c1 = c2 = 2 per paper Sec. 4.1.2. NOTE: the paper does not
+        # specify an inertia weight; the linearly decreasing weight
+        # (W_max -> W_min over the run) is a framework choice kept for
+        # consistency with the AntennaCAT optimizer family.
+
+        self.W = self.W_max - (self.W_max - self.W_min)*(self.iter/np.maximum(self.maxit, 1))
+
+        # personal bests are initialized to sys.maxsize. do not apply the
+        # Pb/Gb learning terms until they hold real evaluated locations,
+        # or the velocity will be driven by the placeholder values.
+        if np.linalg.norm(self.F_Pb[particle]) >= sys.maxsize:
+            return
+        if np.linalg.norm(self.F_Gb) >= sys.maxsize:
+            return
+
+        r1 = self.rng.uniform(0, 1)
+        r2 = self.rng.uniform(0, 1)
+
+        term_pb = self.C1*r1*(self.Pb[particle] - self.M[particle])
+        term_gb = self.C2*r2*(np.squeeze(self.Gb) - self.M[particle])
+
+        # clip to match the overflow protections used in move_hen()
+        self.V[particle] = np.clip(self.W*self.V[particle] + term_pb + term_gb, -10e30, 10e30)
+        self.M[particle] = np.round(self.M[particle] + self.V[particle], self.number_decimals)
+
+
+    def replication_elimination_dispersal(self):
+        # RECSO operations. 2022 ICSO, Sec. 3.1. BFA-inspired.
+        # Called at the START of reorganize_swarm(), BEFORE the swarm is
+        # re-ranked (paper Sec. 3.3, step 5(b) precedes step 5(c)), so the
+        # 'chicks' here are defined by the PREVIOUS role assignment. In
+        # this framework the previous reorganization left the swarm sorted
+        # best (idx 0) to worst (idx N-1), and indices do not move between
+        # role updates, so the last CN entries are the chicks.
+        #
+        # 1) REPRODUCTION (paper Eq. 7):
+        #       X_i(t+1) = X_(i-rNum-hNum)(t)
+        #    the chick at index i inherits the CURRENT position of the
+        #    individual at index i-rNum-hNum, i.e. the chicks collectively
+        #    inherit the positions of the first CN (strongest) individuals.
+        # 2) ELIMINATION-DISPERSAL (paper Eq. 8): each chick is then
+        #    dispersed to a uniformly random in-bounds position with
+        #    probability Ped (= 0.25 per paper Secs. 3.1.2 and 4.1.2).
+        #
+        # FRAMEWORK ADAPTATION NOTE: the paper's Eq. 7 copies position
+        # only; this framework also copies the source's Pb/F_Pb (so the
+        # fitness used by the re-ranking and movement formulas matches the
+        # inherited position) and resets the Pb/F_Pb of dispersed chicks
+        # (so they re-rank as unevaluated/worst and explore from the new
+        # location instead of being pulled back by an inherited best).
+
+        if self.CN < 1:
+            return
+
+        variation = self.ubound - self.lbound
+
+        for i in range(0, self.CN):
+            chick_idx = self.number_of_particles - self.CN + i
+            source_idx = i  # i-th best individual at the last role update
+
+            # REPRODUCTION: copy position, velocity, and personal best
+            self.M[chick_idx] = 1*self.M[source_idx]
+            self.V[chick_idx] = 1*self.V[source_idx]
+            self.Pb[chick_idx] = 1*self.Pb[source_idx]
+            self.F_Pb[chick_idx] = 1*self.F_Pb[source_idx]
+            self.Active[chick_idx] = 1*self.Active[source_idx]
+
+            # ELIMINATION-DISPERSAL with probability Ped
+            # paper Eq. 8: X = lb + (ub - lb)*rand
+            if self.rng.uniform(0, 1) < self.PED:
+                self.M[chick_idx] = np.round(
+                    np.squeeze(
+                        np.multiply(self.rng.random((1, np.shape(self.M)[1])), variation)
+                        + self.lbound
+                    ), self.number_decimals)
+                # reset velocity and personal best so the dispersed chick
+                # explores from its new location
+                self.V[chick_idx] = np.zeros(np.shape(self.M)[1])
+                self.Pb[chick_idx] = sys.maxsize*np.ones(np.shape(self.M)[1])
+                self.F_Pb[chick_idx] = sys.maxsize*np.ones(self.output_size)
+                # a dispersed chick is placed in-bounds by Eq. 8, so it is
+                # re-activated. this also gives INVISIBLE boundary (4) runs
+                # a natural revival mechanism at each role update
+                self.Active[chick_idx] = 1
+
+
 
     def reorganize_swarm(self):
+        # 2022 ICSO: the reproduction & elimination-dispersal operations
+        # (Sec. 3.1) are applied to the chicks BEFORE the swarm is
+        # re-ranked, using the role labels from the PREVIOUS assignment
+        # (paper Sec. 3.3: step 5(b) precedes step 5(c)). They are skipped
+        # at the first role update, when fitness-based roles have not yet
+        # been assigned (paper: 'we judge whether it is the first iteration
+        # of the algorithm, if so, we go to step (c)').
+        # NOTE: if CN > half the swarm, the source (best) and target
+        # (chick) index ranges overlap and early replications can be
+        # re-copied. Standard CSO population splits do not hit this case.
+        if self.ran_reorganize:
+            self.replication_elimination_dispersal()
+        self.ran_reorganize = True
+
         # rank the chickens' fitness vals and establish hierarchial order
         # divide swarm into groups, determine relationship between mother hens and chicks
 
@@ -523,7 +729,7 @@ class swarm:
         # first rooster, to reset the array
         self.chicken_info = np.array([0, 0, -1])
 
-        for i in range(1,int(self.number_of_particles)):
+        for i in range(1,int(self.number_of_particles)): #start with the 2nd rooster/chicken
             if classList[i] == 0: #rooster
                 # assign to the next group (i-1), and done.
                 # CLASSIFICATION(0-4), GROUP(0-m), MOTHER-CHILD ID
@@ -578,12 +784,11 @@ class swarm:
                         np.multiply(np.ones((1, np.shape(self.M)[1])), variation) +
                         self.lbound
                     ), self.number_decimals)
-
             
     def reflecting_bound(self, particle):
         # NOTE: chicken swarm has no velocity array (chickens move by position
-        # rules, not velocity), so unlike the PSO optimizers there is no velocity
-        # to reflect. The position is snapped back to the last in-bounds location.
+        # rules), so unlike PSO there is no velocity to reflect. The position is
+        # snapped back to the last in-bounds location.
         update = self.check_bounds(particle)
         constr = self.constr_func(self.M[particle])
         if (update > 0) and constr:
@@ -640,7 +845,7 @@ class swarm:
         return max_iter
     
     def complete(self):
-        done = self.converged() or self.maxed()
+        done = self.converged() or self.maxed() or self.swarm_stalled
         return done
     
     def step(self, suppress_output):
@@ -660,34 +865,65 @@ class swarm:
             self.debug_message_printout(msg)
             
         if self.allow_update: # The first time step is called, this is false
+            # safety stop: with INVISIBLE boundaries (4) it is possible for
+            # every particle to leave the search space and go inactive. when
+            # that happens no particle can move or be evaluated, self.iter
+            # stops advancing, and a 'while not complete()' driver would
+            # hang. flag the stall so complete() ends the run instead
+            if not np.any(self.Active):
+                if not self.swarm_stalled:
+                    self.swarm_stalled = True
+                    self.debug_message_printout("WARNING: all particles are inactive \
+                                                (out of bounds with INVISIBLE boundary). Ending the optimization early.")
+                return
+
+            # 2022 ICSO: at the start of every full cycle through the
+            # population, the swarm is randomly re-divided into two
+            # equal-scale subgroups (Sec. 3.2/3.3): subgroup 1 moves by
+            # the (RE)CSO role rules, subgroup 2 moves by the PSO
+            # velocity-position update. this happens whether or not the
+            # first particle is currently active
+            if self.current_particle == 0:
+                self.assign_subgroups()
+
             if self.Active[self.current_particle]:
                 # save global best
                 self.check_global_local(self.Flist,self.current_particle)
 
-                # every self.G full cycle iterations reorganize the swarm
-                #  self.G_steps is the # of chickens multiplied by the generations for the number of iterations
+                # every self.G full cycle iterations:
+                #           reorganize the swarm (includes the 2022 ICSO
+                #           reproduction & elimination-dispersal operations
+                #           applied BEFORE the re-ranking)
                 if self.iter%self.G_steps == 0:
-
                     self.reorganize_swarm()
                     #start with the new best rooster
                     self.current_particle = 0
+                    # roles changed and a new cycle starts: re-divide
+                    self.assign_subgroups()
                 
-                # move chickens
-                # roosters are always at the top of the list so that they're moved first.
-                # Then the hens are moved. It doesn't matter which type of hen is moved first.
-                # Chicks are moved last so that they can follow the mother hens
-                chicken_type = self.chicken_info[self.current_particle][0]
-                if chicken_type == 0: #update rooster location
-                    self.move_rooster(self.current_particle)
+                if self.pso_flags[self.current_particle]: 
+                    # PSO subgroup (paper step 6). the PSO update REPLACES
+                    # the CSO role move for this particle this cycle
+                    self.pso_update(self.current_particle)
 
-                elif (chicken_type == 1): #update hen
-                    self.move_hen(self.current_particle)
+                else:
+                    # (RE)CSO subgroup (paper step 5)
+                    # move chickens
+                    # roosters are always at the top of the list so that they're moved first.
+                    # Then the hens are moved. It doesn't matter which type of hen is moved first.
+                    # Chicks are moved last so that they can follow the mother hens
+                    chicken_type = self.chicken_info[self.current_particle][0]
+                    if chicken_type == 0: #update rooster location
+                        self.move_rooster(self.current_particle)
 
-                elif (chicken_type == 2): #update hen location
-                    self.move_hen(self.current_particle)
+                    elif (chicken_type == 1): #update hen location
+                        self.move_hen(self.current_particle)
 
-                elif chicken_type == 3: #update chick location
-                    self.move_chick(self.current_particle)
+                    elif (chicken_type == 2): #update mother hen location
+                        self.move_hen(self.current_particle)
+
+                    elif chicken_type == 3: #update chick location
+                        self.move_chick(self.current_particle)
 
                 # handle any out-of-bounds situation
                 self.handle_bounds(self.current_particle)
@@ -737,6 +973,16 @@ class swarm:
             'MN': [self.MN],
             'CN': [self.CN],
             'G': [self.G],
+            'W_min': [self.W_min],
+            'W_max': [self.W_max],
+            'W': [self.W],
+            'C1': [self.C1],
+            'C2': [self.C2],
+            'PED': [self.PED],
+            'V': [self.V],
+            'pso_flags': [self.pso_flags],
+            'ran_reorganize': [self.ran_reorganize],
+            'swarm_stalled': [self.swarm_stalled],
             'number_of_particles': [self.number_of_particles], 
             # shared format vars for AntennaCAT set
             'M': [self.M], 
@@ -779,6 +1025,16 @@ class swarm:
         self.MN = int(swarm_export['MN'][0]) 
         self.CN = int(swarm_export['CN'][0]) 
         self.G = int(swarm_export['G'][0]) 
+        self.W_min = float(swarm_export['W_min'][0]) 
+        self.W_max = float(swarm_export['W_max'][0]) 
+        self.W = float(swarm_export['W'][0]) 
+        self.C1 = float(swarm_export['C1'][0]) 
+        self.C2 = float(swarm_export['C2'][0]) 
+        self.PED = float(swarm_export['PED'][0]) 
+        self.V = np.array(swarm_export['V'][0]) 
+        self.pso_flags = np.array(swarm_export['pso_flags'][0], dtype=bool) 
+        self.ran_reorganize = bool(swarm_export['ran_reorganize'][0]) 
+        self.swarm_stalled = bool(swarm_export['swarm_stalled'][0]) 
         self.number_of_particles = int(swarm_export['number_of_particles'][0]) 
 
         # shared format vars for AntennaCAT set
@@ -791,10 +1047,7 @@ class swarm:
         self.F_Pb = np.array(swarm_export['F_Pb'][0])  
         self.Flist = np.array(swarm_export['Flist'][0])                                                 
         self.Fvals= np.array(swarm_export['Fvals'][0])                                               
-        self.Mlast= np.array(swarm_export['Mlast'][0]) 
-        # rebuild chicken_info on the next reorganize_swarm cycle; the population
-        # split (RN/HN/MN/CN) and sort order are restored above.
-
+        self.Mlast= np.array(swarm_export['Mlast'][0])    
 
     def get_obj_inputs(self):
         return np.vstack(self.M[self.current_particle])

@@ -1,15 +1,21 @@
-# chicken_swarm_python
+# 2022_improved_chicken_swarm_python
 
-Basic chicken swarm optimizer written in Python.  Modified from the [adaptive timestep PSO optimizer](https://github.com/jonathan46000/pso_python) by [jonathan46000](https://github.com/jonathan46000) to keep a consistent format across optimizers in AntennaCAT.
+Improved chicken swarm optimizer written in Python. This is based off of the 2022 ICSO algorithm in [2]. Other updates to the algorithm will be posted as other branches.
+
+
+Branch modified from [chicken swarm python](https://github.com/LC-Linkous/chicken_swarm_python) (main repo branch). Base structure modified from the [adaptive timestep PSO optimizer](https://github.com/jonathan46000/pso_python) by [jonathan46000](https://github.com/jonathan46000) to keep a consistent format across optimizers in AntennaCAT.
 
 
 Now featuring AntennaCAT hooks for GUI integration and user input handling.
- 
+
 ## Table of Contents
 * [Chicken Swarm Optimization](#chicken-swarm-optimization)
+* [Improved Chicken Swarm Optimization](#improved-chicken-swarm-optimization)
+    * [Reproduction and Elimination-Dispersal (RECSO)](#reproduction-and-elimination-dispersal-recso)
+    * [CSO-PSO Hybridization](#cso-pso-hybridization)
 * [Requirements](#requirements)
 * [Implementation](#implementation)
-    * [Initialization](#initialization) 
+    * [Initialization](#initialization)
     * [State Machine-based Structure](#state-machine-based-structure)
     * [Importing and Exporting Optimizer State](#importing-and-exporting-optimizer-state)
     * [Constraint Handling](#constraint-handling)
@@ -25,7 +31,7 @@ Now featuring AntennaCAT hooks for GUI integration and user input handling.
     * [Realtime Graph](#realtime-graph)
 * [References](#references)
 * [Related Publications and Repositories](#related-publications-and-repositories)
-* [Licensing](#licensing)  
+* [Licensing](#licensing)
 
 ## Chicken Swarm Optimization
 
@@ -45,7 +51,60 @@ In CSO, there is an absence of a direct random velocity component, which is an i
 
     Chicks follow their mother hens. They update their positions based on their mother's positions with some random factor to simulate the dependent behavior.
 
+
+## Improved Chicken Swarm Optimization
+
+This implementation follows the 2022 Improved Chicken Swarm Optimization (ICSO) algorithm presented in [2]. Unlike the 2015 improved chicken swarm variant (which modifies the chick movement equation), the 2022 ICSO retains the **standard** CSO movement models for roosters, hens, and chicks, and instead adds two mechanisms on top of the base algorithm:
+
+1) **RECSO**: reproduction and elimination-dispersal operations (inspired by the Bacterial Foraging Algorithm, BFA) applied to the chicks at each role update.
+2) **CSO-PSO hybridization**: the population is randomly re-divided into two equal-scale subgroups every cycle, with one subgroup moving by the (RE)CSO role rules and the other moving by a standard PSO velocity-position update.
+
+The chick movement retains the standard form (paper Eq. 6):
+
+```
+nextLoc = currentLoc + FL*(locationMother - currentLoc)
+```
+
+where FL is a following coefficient drawn uniformly from (0, 2). NOTE: other optimizers in the AntennaCAT chicken swarm family use a random choice of 0 or 2 for FL instead; the continuous draw here matches the paper, and the code comments note where to swap this to match the family behavior if preferred.
+
+### Reproduction and Elimination-Dispersal (RECSO)
+
+At each role update (the swarm reorganization that occurs every G full cycles), and skipped at the first role update when fitness-based roles have not yet been assigned, two operations are applied to the chicks **before** the swarm is re-ranked. The 'chicks' at this point are defined by the previous role assignment; because the previous reorganization left the swarm sorted from best to worst, the last CN entries are the chicks.
+
+1) **Reproduction** (paper Eq. 7): each chick inherits the current position of one of the CN best-performing individuals in the swarm; collectively, the chicks are replaced with copies of the strongest individuals.
+
+```
+X_i(t+1) = X_(i-rNum-hNum)(t)
+```
+
+2) **Elimination-dispersal** (paper Eq. 8): each replicated chick is then scattered to a uniformly random in-bounds position in the search space with probability Ped (= 0.25 per the paper):
+
+```
+X = lb + (ub - lb)*rand
+```
+
+Framework adaptation note: the paper's Eq. 7 copies position only. This implementation also copies the source's personal best (so the fitness used by the re-ranking and movement formulas matches the inherited position) and resets the personal best of dispersed chicks (so they re-rank as unevaluated and explore from the new location instead of being pulled back by an inherited best).
+
+### CSO-PSO Hybridization
+
+At the start of every full cycle through the population, the swarm is randomly divided into two equal-scale subgroups (if the population size is odd, the extra particle stays in the CSO subgroup):
+
+* **Subgroup 1** moves by the (RE)CSO role rules (rooster/hen/chick movement models).
+* **Subgroup 2** moves by the standard PSO velocity-position update, using each particle's personal best and the swarm global best:
+
+```
+V = W*V + C1*rand*(Pb - X) + C2*rand*(Gb - X)
+X = X + V
+```
+
+The PSO update **replaces** the CSO role move for particles in subgroup 2 for that cycle; it is not a refinement applied after it. Per the paper, C1 = C2 = 2. The paper does not specify an inertia weight; this implementation uses a linearly decreasing weight (W_max -> W_min over the run) as a framework choice for consistency with the AntennaCAT optimizer family.
+
+Both subgroups share one population, one fitness record, and one global best, which realizes the paper's merge/information-exchange step implicitly.
+
+
 ## Requirements
+
+
 This project requires numpy, pandas, and matplotlib for the full demos. To run the optimizer without visualization, only numpy and pandas are requirements
 
 Use 'pip install -r requirements.txt' to install the following dependencies:
@@ -76,16 +135,14 @@ pip install  matplotlib, numpy, pandas
 This is an example for if you've had a difficult time with the requirements.txt file. Sometimes libraries are packaged together.
 
 ## Implementation
-
-### Initialization 
+### Initialization
 
 ```python
-    # swarm variables
+    # constant variables
     TOL = 10 ** -6                      # Convergence Tolerance
     MAXIT = 10000                       # Maximum allowed iterations
     BOUNDARY = 1                        # int boundary 1 = random,      2 = reflecting
                                         #              3 = absorbing,   4 = invisible
-
 
     # Objective function dependent variables
     LB = func_configs.LB                    # Lower boundaries, [[0.21, 0, 0.1]]
@@ -106,6 +163,14 @@ This is an example for if you've had a difficult time with the requirements.txt 
     CN = 20                       # Total number of chicks
     G = 70                        # Reorganize groups every G steps 
 
+    # improved chicken swarm (2022 ICSO) specific
+    MIN_WEIGHT = 0.4              # minimum PSO inertia weight
+    MAX_WEIGHT = 0.9              # maximum (starting) PSO inertia weight
+    C1 = 2                        # PSO cognitive learning factor (personal best)
+    C2 = 2                        # PSO social learning factor (global best)
+    PED = 0.25                    # elimination-dispersal probability, 0-1
+
+
     # swarm setup
     best_eval = 1
 
@@ -122,7 +187,12 @@ This is an example for if you've had a difficult time with the requirements.txt 
                 'HN': [HN],                 # Total number of hens
                 'MN': [MN],                 # Number of mother hens in total hens
                 'CN': [CN],                 # Total number of chicks
-                'G': [G]}                   # Reorganize groups every G steps 
+                'G': [G],                   # Reorganize groups every G steps 
+                'MIN_WEIGHT': [MIN_WEIGHT], # minimum PSO inertia weight
+                'MAX_WEIGHT': [MAX_WEIGHT], # maximum (starting) PSO inertia weight
+                'C1': [C1],                 # PSO cognitive learning factor
+                'C2': [C2],                 # PSO social learning factor
+                'PED': [PED]}               # elimination-dispersal probability
 
     opt_df = pd.DataFrame(opt_params)
     mySwarm = swarm(LB, UB, TARGETS, TOL, MAXIT,
@@ -138,7 +208,7 @@ This is an example for if you've had a difficult time with the requirements.txt 
     # dataFrame,
     # class obj, 
     # bool, [int, int, ...], 
-    # int)
+    # int) 
     #  
     # opt_df contains class-specific tuning parameters
     # boundary: int. 1 = random, 2 = reflecting, 3 = absorbing,   4 = invisible
@@ -147,6 +217,11 @@ This is an example for if you've had a difficult time with the requirements.txt 
     # MN: int
     # CN: int
     # G: int
+    # w_min: float (PSO inertia weight, minimum)
+    # w_max: float (PSO inertia weight, maximum/starting)
+    # c1: float (PSO cognitive learning factor, personal best)
+    # c2: float (PSO social learning factor, global best)
+    # ped: float (elimination-dispersal probability, 0-1)
     #
 
 ```
@@ -156,6 +231,10 @@ This is an example for if you've had a difficult time with the requirements.txt 
 This optimizer uses a state machine structure to control the movement of the particles, call to the objective function, and the evaluation of current positions. The state machine implementation preserves the initial algorithm while making it possible to integrate other programs, classes, or functions as the objective function.
 
 A controller with a `while loop` to check the completion status of the optimizer drives the process. Completion status is determined by at least 1) a set MAX number of iterations, and 2) the convergence to a given target using the L2 norm.  Iterations are counted by calls to the objective function. 
+
+In this 2022 ICSO implementation, the random re-division of the swarm into the CSO and PSO subgroups happens at the start of every full cycle through the population (one full cycle through the population in this state-machine framework corresponds to one iteration of the paper's main loop). The reproduction and elimination-dispersal operations are applied as part of the swarm reorganization every G full cycles.
+
+As a safety measure for the INVISIBLE boundary type, if every particle leaves the search space and goes inactive, the optimizer flags the stall and ends the run rather than letting the driver loop run forever.
 
 Within this `while loop` are three function calls to control the optimizer class:
 * **complete**: the `complete function` checks the status of the optimizer and if it has met the convergence or stop conditions.
@@ -192,9 +271,10 @@ The code below is an example of this process:
                 print("Best Eval")
                 print(best_eval)
 ```
+
 ### Importing and Exporting Optimizer State
 
-Some optimizer information can be exported or imported. This varies based on each optimizer.
+Some optimizer information can be exported or imported. This varies based on each optimizer. For this optimizer, the exported state includes the PSO-related variables (velocity array, inertia weight, learning factors, subgroup flags) and the RECSO-related state (elimination-dispersal probability, whether a fitness-based role assignment has happened yet) in addition to the shared AntennaCAT format variables.
 
 Optimizer state can be exported at any step. When importing an optimizer state, the optimizer should be initialized first, and then the state information can be imported via a Python pickle file. Other methods can be used if custom code is written to handle preprocessing.
 
@@ -225,9 +305,10 @@ This optimizers has 4 different types of bounds, Random (Particles that leave th
 
 Some updates have not incorporated appropriate handling for all boundary conditions.  This bug is known and is being worked on.  The most consistent boundary type at the moment is Random.  If constraints are violated, but bounds are not, currently random bound rules are used to deal with this problem. 
 
+For the Invisible boundary type, two behaviors specific to this implementation are worth noting: 1) if every particle goes inactive, the optimizer ends the run early instead of hanging, and 2) the elimination-dispersal operation places dispersed chicks in-bounds and re-activates them, which gives Invisible boundary runs a natural revival mechanism at each role update.
+
 ### Multi-Objective Optimization
 The no preference method of multi-objective optimization, but a Pareto Front is not calculated. Instead the best choice (smallest norm of output vectors) is listed as the output.
-
 
 ### Objective Function Handling
 The objective function is handled in two parts. 
@@ -407,7 +488,6 @@ When using a THRESHOLD, the `Flist` value corresponding to the target is set to 
 
 
 
-
 ## Example Implementations
 
 ### Basic Swarm Example
@@ -430,6 +510,8 @@ NOTE: if you close the graph as the code is running, the code will continue to r
 
 [1] X. B. Meng, Y. Liu, X. Gao, and H. Zhang, "A new bio-inspired algorithm: Chicken swarm optimization," in Proc. Int. Conf. Swarm Intell. Cham, Switzerland, Springer, 2014, pp. 86–94.
 
+[2] J. Liang, L. Wang, and M. Ma, "An Improved Chicken Swarm Optimization Algorithm for Solving Multimodal Optimization Problems," Computational Intelligence and Neuroscience, vol. 2022, Article ID 5359732, 2022. https://doi.org/10.1155/2022/5359732
+
 ## Related Publications and Repositories
 This software works as a stand-alone implementation, and as one of the optimizers integrated into AntennaCAT.
 
@@ -437,5 +519,3 @@ This software works as a stand-alone implementation, and as one of the optimizer
 ## Licensing
 
 The code in this repository has been released under GPL-2.0
-
-
